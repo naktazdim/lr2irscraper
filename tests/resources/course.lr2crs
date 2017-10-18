@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="shift_jis"?>
+<!--曲は上から順に登録されます。-->
+<courselist>
+
+	<course>
+		<title>段位認定 発狂初段</title>
+		<line>7</line>
+		<hash>00000000002000000000000000005190c07125de4ed7fbe7cb066cc41e50e51efc7d46e7bbc9f6afd26d05e3bf2ef555b3887714270e28988ce900e4b9300994d1877ad5dc0134b27eb0238da5721eed</hash>
+		<type>2</type>
+	</course>
+
+</courselist>

@@ -1,0 +1,44 @@
+<html lang="ja">
+<head>
+<meta http-equiv="CONTENT-TYPE" content="text/html; CHARSET=Shift_JIS">
+<title>LR2 internet ranking</title>
+<meta name="viewport" content="width=device-width, initial-scale=1,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no ">
+  <link rel="stylesheet" type="text/css" href="style.css?201702">
+<meta name="Author" content="lavalse,Kamiyu">
+<style type=text/css>
+<!--
+body { background-color: #000000 ;
+background-image:url("wall.jpg") ;
+background-repeat:no-repeat ;
+background-attachment:fixed ;
+background-position:right bottom;}
+-->
+</style>
+<meta http-equiv="Imagetoolbar" content="no">
+<meta name="ROBOTS" content="NOINDEX, NOFOLLOW">
+</head>
+<body>
+
+<div class="server" align="center"><iframe src="/server.html" frameborder=0 scrolling="no" width=100% height="20"></iframe><div align="center"><!--全体を中心寄りにする箱-->
+<div id="box">
+<div id="user"><form action="search.cgi" method="post" name = "loginform">LR2ID<input type="text" id="loginid" name="lr2id" size="10"> パスワード<input type="password" id="pwd" name="pass" size="20"> <input type="submit" name="mode" value="ログイン"></form>
+</div>
+
+<a href="search.cgi"><div id="logo"><img src="black.png" alt= /><img id="logoimg" src="LRIRbanner2017.jpg" /></div></a>
+<div id="menu">
+マイページ(ログインが必要です)｜<a href="search.cgi?mode=search&type=insane">発狂BMS</a> | <a href="search.cgi?mode=ranking_all">総合ランキング</a> | <a href="search.cgi?mode=gradelist">段位認定</a> | <a href="search.cgi?mode=detail">詳細検索</a> | <a href="search.cgi?mode=history">IR更新履歴</a> | <a href="search.cgi?mode=download">LR2本体</a> | <a href="search.cgi?mode=tool">ツール</a>
+</div><!--end menu-->
+
+<div id="search">
+<form action="search.cgi" method="get" name = "searchform">
+ <input type="hidden" name="mode" value="search">
+ <input type="hidden" name="sort" value="bmsid_desc">
+ <input type="text" name="keyword" size="50" value=""><input type="submit" name="exec" value="検索"><br>
+ <input type="radio" name="type" value="keyword"  checked>キーワード検索 <input type="radio" name="type" value="tag">タグ検索 <input type="radio" name="type" value="player">プレイヤー検索 <input type="radio" name="type" value="course">コース検索
+</form>
+</div><!--end search--> 
+エラーが発生しました。
+<br>
+</div><!--end box--> 
+</div><!--全体を中心寄りにする箱終わり--> 
+</body></html>
