@@ -128,3 +128,48 @@ def read_player_count_from_html(source: str) -> int:
     if match is None:
         raise ParseError
     return int(match.group(1))
+
+
+def read_bmsid_from_html(source: str) -> int:
+    """ search.cgi?mode=ranking から取得した html (1 ページ分) から bmsid を抽出する。
+
+    Args:
+        source: ソース (UTF-8 を想定)
+
+    Returns: bmsid
+
+    """
+    match = re.search("<a href=\"search\.cgi\?mode=editlogList&bmsid=(\d+)\">", source)
+    if match is None:
+        raise ParseError
+    return int(match.group(1))
+
+
+def read_courseid_from_html(source: str) -> int:
+    """ search.cgi?mode=ranking から取得した html (1 ページ分) から courseid を抽出する。
+
+    Args:
+        source: ソース (UTF-8 を想定)
+
+    Returns: courseid
+
+    """
+    match = re.search("<a href =\"search\.cgi\?mode=downloadcourse&courseid=(\d+)\">", source)
+    if match is None:
+        raise ParseError
+    return int(match.group(1))
+
+
+def read_course_hash_from_course_file(source: str) -> str:
+    """ search.cgi?mode=downloadcourse から取得したコースファイル (course.lr2crs) からコースのハッシュ値を抽出する。
+
+    Args:
+        source: ソース (UTF-8 を想定)
+
+    Returns: コースのハッシュ値
+
+    """
+    match = re.search("<hash>([0-9a-f]{160})</hash>", source)
+    if match is None:
+        raise ParseError
+    return match.group(1)
