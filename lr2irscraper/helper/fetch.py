@@ -8,18 +8,18 @@ import requests
 _session = requests.Session()
 
 
-def fetch(url: str, encoding: str = "cp932") -> str:
+def fetch(url: str, encoding: str = "auto") -> str:
     """ 指定した URL からデータを得る。
 
     Args:
         url: URL
-        encoding: エンコーディング (LR2IR に合わせてデフォルト値は "cp932")
+        encoding: エンコーディング ("auto" の場合は自動判定)
 
     Returns: データ
 
     """
     r = _session.get(url)
-    r.encoding = encoding
+    r.encoding = r.apparent_encoding if encoding == "auto" else encoding
     return r.text
 
 
