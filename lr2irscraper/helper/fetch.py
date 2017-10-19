@@ -8,7 +8,7 @@ import requests
 _session = requests.Session()
 
 
-def _fetch(url: str, encoding: str = "cp932") -> str:
+def fetch(url: str, encoding: str = "cp932") -> str:
     """ 指定した URL からデータを得る。
 
     Args:
@@ -32,7 +32,7 @@ def fetch_ranking_xml(hash_value: str) -> str:
     Returns: 生の xml
 
     """
-    return _fetch("http://www.dream-pro.info/~lavalse/LR2IR"
+    return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
                   "/2/getrankingxml.cgi?id=1&songmd5={}".format(hash_value))
 
 
@@ -47,7 +47,7 @@ def fetch_ranking_html_by_id(bmsid: int, mode: str, page: int) -> str:
     Returns: 生の html (1 ページ分)
 
     """
-    return _fetch("http://www.dream-pro.info/~lavalse/LR2IR"
+    return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
                   "/search.cgi?mode=ranking&{}id={}&page={}".format(mode, bmsid, page))
 
 
@@ -61,7 +61,7 @@ def fetch_ranking_html_by_hash(hash_value: str, page: int) -> str:
     Returns: 生の html (1 ページ分)
 
     """
-    return _fetch("http://www.dream-pro.info/~lavalse/LR2IR"
+    return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
                   "/search.cgi?mode=ranking&bmsmd5={}&page={}".format(hash_value, page))
 
 
@@ -74,5 +74,5 @@ def fetch_course_file(courseid: int) -> str:
     Returns: 「コースファイル」 (xml)
 
     """
-    return _fetch("http://www.dream-pro.info/~lavalse/LR2IR"
+    return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
                   "/search.cgi?mode=downloadcourse&courseid={}".format(courseid))
