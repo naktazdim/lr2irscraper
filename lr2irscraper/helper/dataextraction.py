@@ -70,8 +70,8 @@ def extract_ranking_from_html(source: str) -> pd.DataFrame:
     # 上記の正規表現のグループ (括弧) がそれぞれ順に以下の値に対応する
     columns = ["rank", "playerid", "name", "sp_dan", "dp_dan", "clear", "dj_level",
                "score", "max_score", "score_percentage", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr",
-               "gauge_option", "random_option", "input", "body", "comments"]
     numeric_columns = ["rank", "score", "max_score", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr"]
+               "gauge_option", "random_option", "input", "body", "comment"]
 
     lines = source.split("\n")
 

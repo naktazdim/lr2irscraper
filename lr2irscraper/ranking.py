@@ -39,7 +39,7 @@ def get_ranking_data_by_id(bmsid: int, mode: str="bms", interval: float=1.0) -> 
     Returns:
         ランキングデータ
         rank, name, sp_dan, dp_dan, clear, dj_level, score, max_score, score_percentage,
-        combo, notes, minbp, pg, gr, gd, bd, pr, gauge_option, random_option, input, body, comments
+        combo, notes, minbp, pg, gr, gd, bd, pr, gauge_option, random_option, input, body, comment
 
     """
     validate_id(bmsid)
