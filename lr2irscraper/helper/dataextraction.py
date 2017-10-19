@@ -70,8 +70,9 @@ def extract_ranking_from_html(source: str) -> pd.DataFrame:
     # 上記の正規表現のグループ (括弧) がそれぞれ順に以下の値に対応する
     columns = ["rank", "playerid", "name", "sp_dan", "dp_dan", "clear", "dj_level",
                "score", "max_score", "score_percentage", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr",
-    numeric_columns = ["rank", "score", "max_score", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr"]
                "gauge_option", "random_option", "input", "body", "comment"]
+    numeric_columns = ["rank", "playerid", "score", "max_score", "combo",
+                       "notes", "minbp", "pg", "gr", "gd", "bd", "pr"]
 
     lines = source.split("\n")
 
@@ -80,24 +81,19 @@ def extract_ranking_from_html(source: str) -> pd.DataFrame:
     except ValueError:  # もし見つからなければ
         raise ParseError
 
-    # 気合いでパースして dict を生成
-    data_dict = {}
+    # 気合いでパース
+    records = []
     for i in range(header_line_number + 1, len(lines), 2):  # ヘッダ行の次の行から
         match = data_regexp.match("\n".join(lines[i: i + 2]))  # 2 行ずつ読んで上記の正規表現を適用する
         if match is None:  # マッチしなければ
             break  # そこで終了
-
-        record = OrderedDict(zip(columns, match.groups()))  # 1 人分のデータの dict を生成
-
-        playerid = int(record.pop("playerid"))  # playerid をキーとして、
-        data_dict[playerid] = record  # record を data_dict に格納
-
+        records.append(match.groups())
     return (
-        pd.DataFrame
-          .from_dict(data_dict, orient="index")  # pd.DataFrame に変換して
-          .apply(lambda x: pd.to_numeric(x) if x.name in numeric_columns else x)  # 数値のところは数値型に変換して返す
-        # to_numeric(errors="ignore") でやると comment 列が全員空欄のときに数値扱いされて NaN になってしまうので列を指定している
+        pd.DataFrame(records, columns=columns)
+          .apply(lambda x: pd.to_numeric(x) if x.name in numeric_columns else x)  # 数値のところは数値型に変換して
+          .set_index("playerid")  # playerid をインデックスとして返す
     )
+    # to_numeric(errors="ignore") とすると comment 列が全員空欄のときに数値扱いされて NaN になってしまうので列を指定している
 
 
 def chart_unregistered(source: str) -> bool:
