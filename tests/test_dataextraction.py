@@ -8,9 +8,9 @@ from lr2irscraper.helper.dataextraction import *
 
 class TestDataExtraction(unittest.TestCase):
     @classmethod
-    def resource(cls, name: str):
+    def resource(cls, name: str, encoding: str="cp932"):
         path = os.path.join(os.path.dirname(__file__), "resources", name)
-        with codecs.open(path, "r", "cp932") as f:
+        with codecs.open(path, "r", encoding) as f:
             return f.read()
 
     def test_parse_ranking_xml(self):
@@ -89,6 +89,22 @@ class TestDataExtraction(unittest.TestCase):
         for file, course_hash in zip(files, course_hashes):
             with self.subTest(file=file):
                 self.assertEqual(read_course_hash_from_course_file(self.resource(file)), course_hash)
+
+    def test_extract_old_style_bms_table(self):
+        insane = extract_bms_table_from_html(self.resource("insane.html"))
+        self.assertEqual(tuple(insane.loc[15]),
+                         ("★1", "星の器～STAR OF ANDROMEDA (ANOTHER)",
+                          "<a href='http://bit.ly/eoD0dZ'>ZUN (Arr.sun3)</a>",
+                          "<a href=''></a>",
+                          ""))
+
+        overjoy = extract_bms_table_from_html(self.resource("overjoy.html", "utf-8"), is_overjoy=True)
+        self.assertEqual(tuple(overjoy.loc[1031]),
+                         ("★★5", "FREEDOM DiVE [FOUR DIMENSIONS]",
+                          "<a href='http://manbow.nothing.sh/event/event.cgi"
+                          "?action=More_def&num=15&event=50'>MAXBEAT</a>",
+                          "<a href='http://airlab.web.fc2.com/'>air</a>",
+                          ""))
 
 
 if __name__ == '__main__':
