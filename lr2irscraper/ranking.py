@@ -17,7 +17,8 @@ def get_ranking_data_by_hash(hash_value: str) -> pd.DataFrame:
 
     Returns:
         ランキングデータ
-        name, clear, notes, combo, pg, gr, minbp
+        index: playerid
+        columns: name, clear, notes, combo, pg, gr, minbp
 
     """
     validate_hash(hash_value)
@@ -38,8 +39,9 @@ def get_ranking_data_by_id(bmsid: int, mode: str="bms", interval: float=1.0) -> 
 
     Returns:
         ランキングデータ
-        rank, name, sp_dan, dp_dan, clear, dj_level, score, max_score, score_percentage,
-        combo, notes, minbp, pg, gr, gd, bd, pr, gauge_option, random_option, input, body, comment
+        index: playerid
+        columns: rank, name, sp_dan, dp_dan, clear, dj_level, score, max_score, score_percentage,
+                 combo, notes, minbp, pg, gr, gd, bd, pr, gauge_option, random_option, input, body, comment
 
     """
     validate_id(bmsid)
