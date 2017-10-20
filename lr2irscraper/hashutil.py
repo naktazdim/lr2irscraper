@@ -30,9 +30,9 @@ def hash_to_courseid(hash_value: str) -> int:
     """ コースのハッシュ値から courseid を得る。
 
     Args:
-        hash_value:
+        hash_value: ハッシュ値
 
-    Returns:
+    Returns: courseid
 
     """
     validate_course_hash(hash_value)
