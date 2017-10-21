@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from time import sleep
+from typing import Union
 
 import pandas as pd
 
@@ -9,8 +10,8 @@ from lr2irscraper.helper.validation import *
 from lr2irscraper.helper.exceptions import RankingChangedError, UnregisteredError
 
 
-def get_ranking_data_by_hash(hash_value: str) -> pd.DataFrame:
-    """ ハッシュ値からランキングデータを取得する。
+def get_ranking_data(hash_value: str) -> pd.DataFrame:
+    """ ランキングデータを取得する。ハッシュ値を渡す必要がある。
 
     Args:
         hash_value: ハッシュ値 (bms の場合は 32 桁、コースの場合は 160 桁の 16 進数値)
@@ -25,16 +26,16 @@ def get_ranking_data_by_hash(hash_value: str) -> pd.DataFrame:
     return extract_ranking_from_xml(fetch_ranking_xml(hash_value))
 
 
-def get_ranking_data_by_id(bmsid: int, mode: str="bms", interval: float=1.0) -> pd.DataFrame:
-    """ bmsid を与えるとランキングデータを返す。
+def get_ranking_data_detail(id_or_hash: Union[int, str], mode: str, interval: float=1.0) -> pd.DataFrame:
+    """ 詳細なランキングデータを取得する。bmsid (courseid) およびハッシュ値のいずれを渡してもよい。
 
     1 ページ (100 件) ずつランキングページを読み取ってデータを取得する。
-    get_ranking_data_by_hash() より多くの情報が得られるが、低速。取得中にランキングが更新されてしまい失敗することがある。
-    ハッシュ値がわかっていて get_ranking_data_by_hash() のデータで事足りる場合は極力そちらを使用すること。
+    get_ranking_data() より多くの情報が得られるが、低速。取得中にランキングが更新されてしまい失敗することがある。
+    ハッシュ値がわかっていて get_ranking_data() のデータで事足りる場合は極力そちらを使用すること。
 
     Args:
-        bmsid: bmsid または courseid
-        mode: BMS の場合は "bms"、コースの場合は "course" を指定
+        id_or_hash: bmsid, courseid またはハッシュ値
+        mode: "bmsid", "courseid", "hash" のいずれかを指定
         interval: 1ページ取得するごとに interval 秒だけ間隔をあける (サーバに負荷をかけすぎないため)
 
     Returns:
@@ -44,15 +45,18 @@ def get_ranking_data_by_id(bmsid: int, mode: str="bms", interval: float=1.0) -> 
                  combo, notes, minbp, pg, gr, gd, bd, pr, gauge_option, random_option, input, body, comment
 
     """
-    validate_id(bmsid)
-    if not (mode in ["bms", "course"]):
-        raise ValueError("{}: mode must be 'bms' or 'course'".format(mode))
+    if mode in ["bmsid", "courseid"]:
+        validate_id(id_or_hash)
+    elif mode == "hash":
+        validate_hash(id_or_hash)
+    else:
+        raise ValueError("{}: mode must be 'bms', 'course' or 'hash'".format(mode))
 
     # まず 1 ページ目を取得し、そこから諸々の情報を得る
-    source = fetch_ranking_html_by_id(bmsid, mode, 1)
+    source = fetch_ranking_html(id_or_hash, mode, 1)
 
     if chart_unregistered(source):
-        raise UnregisteredError(bmsid, mode + "id")
+        raise UnregisteredError(id_or_hash, mode)
 
     player_count = read_player_count_from_html(source)  # プレイヤ数を取得 (ランキング更新の判定に使う)
     page_count = (player_count + 99) // 100  # プレイヤ数を 100 で割って切り上げるとページ数
@@ -64,7 +68,7 @@ def get_ranking_data_by_id(bmsid: int, mode: str="bms", interval: float=1.0) -> 
     for page in range(2, page_count + 1):
         sleep(interval)
 
-        source = fetch_ranking_html_by_id(bmsid, mode, page)
+        source = fetch_ranking_html(id_or_hash, mode, page)
 
         if read_player_count_from_html(source) != player_count:  # もしプレイヤ数が変化していたら
             raise RankingChangedError  # 途中でランキングが更新されてしまっている
