@@ -8,7 +8,7 @@ def validate_id(bmsid: int):
 
 
 def validate_hash(hash_value: str):
-    if not re.match("^[0-9a-f]{32, 160}$", hash_value):
+    if not re.match("^([0-9a-f]{32}|[0-9a-f]{160})$", hash_value):
         raise ValueError("{}: hash must be 32 or 160 hexadecimal digits".format(hash))
 
 
