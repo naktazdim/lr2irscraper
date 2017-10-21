@@ -8,7 +8,7 @@ from lr2irscraper.helper.fetch import fetch
 from lr2irscraper.helper.dataextraction import extract_bms_table_from_html
 
 
-def get__bms_table(url: str, is_overjoy: bool=None) -> pd.DataFrame:
+def get_bms_table(url: str, is_overjoy: bool=None) -> pd.DataFrame:
     """ 指定した URL から従来の (『次期難易度表フォーマット』に対応していない) 難易度表データを取得する。
 
     発狂難易度表・Overjoy 表以外の表での動作は保証しない (半数程度はうまくいくようだが)。
