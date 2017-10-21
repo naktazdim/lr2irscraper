@@ -15,5 +15,5 @@ class UnregisteredError(Exception):
         return "{}: unregistered {}".format(self.id_or_hash, self.kind)
 
 
-class RankingChangedError(Exception):
+class InconsistentDataError(Exception):
     pass

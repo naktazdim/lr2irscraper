@@ -7,7 +7,7 @@ import pandas as pd
 from lr2irscraper.helper.fetch import *
 from lr2irscraper.helper.dataextraction import *
 from lr2irscraper.helper.validation import *
-from lr2irscraper.helper.exceptions import RankingChangedError, UnregisteredError
+from lr2irscraper.helper.exceptions import InconsistentDataError, UnregisteredError
 
 
 def get_ranking_data(hash_value: str) -> pd.DataFrame:
@@ -71,13 +71,13 @@ def get_ranking_data_detail(id_or_hash: Union[int, str], mode: str, interval: fl
         source = fetch_ranking_html(id_or_hash, mode, page)
 
         if read_player_count_from_html(source) != player_count:  # もしプレイヤ数が変化していたら
-            raise RankingChangedError  # 途中でランキングが更新されてしまっている
+            raise InconsistentDataError  # 途中でランキングが更新されてしまっているので終了
 
         data_frames.append(extract_ranking_from_html(source))
 
         index = set(data_frames[-1].index)  # このページのプレイヤ ID の集合
         if player_ids & index:  # に、もし今までに見たプレイヤ ID と 1 つでも重複があれば
-            raise RankingChangedError  # 途中でランキングが更新されてしまっている
+            raise InconsistentDataError  # 途中でランキングが更新されてしまっているので終了
 
         player_ids |= index  # プレイヤ ID の集合を更新
 
