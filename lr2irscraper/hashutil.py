@@ -21,7 +21,7 @@ def hash_to_bmsid(hash_value: str) -> int:
     validate_bms_hash(hash_value)
     try:
         very_large_page_number = 4294967295  # 大きいページ数を指定してランキングの表示件数を 0 件にしている
-        return read_bmsid_from_html(fetch_ranking_html_by_hash(hash_value, very_large_page_number))
+        return read_bmsid_from_html(fetch_ranking_html(hash_value, mode="hash", page=very_large_page_number))
     except ParseError:
         raise UnregisteredError(hash_value, "hash")
 
@@ -38,7 +38,7 @@ def hash_to_courseid(hash_value: str) -> int:
     validate_course_hash(hash_value)
     try:
         very_large_page_number = 4294967295  # 大きいページ数を指定してランキングの表示件数を 0 件にしている
-        return read_courseid_from_html(fetch_ranking_html_by_hash(hash_value, very_large_page_number))
+        return read_courseid_from_html(fetch_ranking_html(hash_value, mode="hash", page=very_large_page_number))
     except ParseError:
         raise UnregisteredError(hash_value, "hash")
 
