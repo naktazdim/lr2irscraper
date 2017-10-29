@@ -43,8 +43,8 @@ def extract_ranking_from_xml(source: str) -> pd.DataFrame:
         raise ParseError
 
     return (
-        pd.DataFrame.from_dict(data_dict, orient="index")  # pd.DataFrame に変換して
-                    .apply(pd.to_numeric, errors="ignore")  # 数値のところは数値型に変換して返す
+        pd.DataFrame.from_dict(data_dict, orient="index")
+                    .astype({column: int for column in ["clear", "notes", "combo", "pg", "gr", "minbp"]})
     )
 
 
@@ -73,9 +73,10 @@ def extract_ranking_from_html(source: str) -> pd.DataFrame:
     columns = ["rank", "playerid", "name", "sp_dan", "dp_dan", "clear", "dj_level",
                "score", "max_score", "score_percentage", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr",
                "gauge_option", "random_option", "input", "body", "comment"]
-    numeric_columns = ["rank", "playerid", "score", "max_score", "combo",
-                       "notes", "minbp", "pg", "gr", "gd", "bd", "pr"]
-
+    # うち、整数値のものとカテゴリ変数のもの
+    ints = ["rank", "playerid", "score", "max_score", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr"]
+    categories = ["sp_dan", "dp_dan", "clear", "dj_level", "gauge_option", "random_option", "input", "body"]
+    
     lines = source.split("\n")
 
     try:
@@ -92,10 +93,10 @@ def extract_ranking_from_html(source: str) -> pd.DataFrame:
         records.append(match.groups())
     return (
         pd.DataFrame(records, columns=columns)
-          .apply(lambda x: pd.to_numeric(x) if x.name in numeric_columns else x)  # 数値のところは数値型に変換して
-          .set_index("playerid")  # playerid をインデックスとして返す
+          .astype({column: int for column in ints})
+          .astype({column: "category" for column in categories})
+          .set_index("playerid")
     )
-    # to_numeric(errors="ignore") とすると comment 列が全員空欄のときに数値扱いされて NaN になってしまうので列を指定している
 
 
 def chart_unregistered(source: str) -> bool:
@@ -225,7 +226,7 @@ def extract_bms_table_from_html(source: str, is_overjoy=False) -> pd.DataFrame:
     columns = ["", "level", "title", "bmsid", "url1", "url2", "comment"]
     return (pd.DataFrame(mname, columns=columns)  # DataFrame にして
               .drop("", axis=1)  # 最初の列を落として
-              .assign(bmsid=lambda x: pd.to_numeric(x["bmsid"]))  # bmsid を数値にして
+              .astype({"bmsid": int})  # bmsid を数値にして
               .set_index("bmsid")  # bmsid を index として
               .sort_index())  # ソートして返す
 
