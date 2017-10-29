@@ -45,6 +45,7 @@ def extract_ranking_from_xml(source: str) -> pd.DataFrame:
     return (
         pd.DataFrame.from_dict(data_dict, orient="index")
                     .astype({column: int for column in ["clear", "notes", "combo", "pg", "gr", "minbp"]})
+                    .sort_index()
     )
 
 
@@ -96,6 +97,7 @@ def extract_ranking_from_html(source: str) -> pd.DataFrame:
           .astype({column: int for column in ints})
           .astype({column: "category" for column in categories})
           .set_index("playerid")
+          .sort_index()
     )
 
 
