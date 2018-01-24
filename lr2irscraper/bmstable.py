@@ -18,8 +18,7 @@ def get_bms_table(url: str, is_overjoy: bool=None) -> pd.DataFrame:
         is_overjoy: Overjoy 表かどうか (指定しなければ自動判定するが、うまくいかない場合は明示的に指定)
 
     Returns: 難易度表データ
-             index: bmsid
-             columns: level, title, url1, url2, comment
+             (bmsid, level, title, url1, url2, comment)
 
     """
     if is_overjoy is None:

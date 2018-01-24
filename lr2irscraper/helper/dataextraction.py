@@ -7,7 +7,6 @@ LR2IR の search.cgi や getrankingxml.cgi などの出力からデータを読�
 
 import re
 import xml.etree.ElementTree
-from collections import OrderedDict
 from html.parser import HTMLParser
 from ast import literal_eval
 
@@ -23,9 +22,12 @@ def extract_ranking_from_xml(source: str) -> pd.DataFrame:
         source: ソース (UTF-8 を想定)
 
     Returns: ランキングデータ
+             (id, name, clear, notes, combo, pg, gr, minbp)
 
     """
-    columns = ["name", "clear", "notes", "combo", "pg", "gr", "minbp"]
+    columns = ["id", "name", "clear", "notes", "combo", "pg", "gr", "minbp"]
+    # うち、整数値のもの
+    ints = ["id", "clear", "notes", "combo", "pg", "gr", "minbp"]
 
     match = re.search(r'(<ranking>.*?</ranking>)', source, re.DOTALL)  # <ranking> タグの中身のみを対象とする
     if match is None:
@@ -34,18 +36,16 @@ def extract_ranking_from_xml(source: str) -> pd.DataFrame:
 
     # パースして dict を生成
     try:
-        data_dict = {
-            int(child.find("id").text):
-                OrderedDict([(key, child.find(key).text) for key in columns])
+        records = [
+            [child.find(key).text for key in columns]
             for child in xml.etree.ElementTree.fromstring(source)
-        }
+        ]
     except xml.etree.ElementTree.ParseError:
         raise ParseError
 
     return (
-        pd.DataFrame.from_dict(data_dict, orient="index")
-                    .astype({column: int for column in ["clear", "notes", "combo", "pg", "gr", "minbp"]})
-                    .sort_index()
+        pd.DataFrame(records, columns=columns)
+          .astype({column: int for column in ints})
     )
 
 
@@ -96,8 +96,6 @@ def extract_ranking_from_html(source: str) -> pd.DataFrame:
         pd.DataFrame(records, columns=columns)
           .astype({column: int for column in ints})
           .astype({column: "category" for column in categories})
-          .set_index("playerid")
-          .sort_index()
     )
 
 
@@ -184,8 +182,7 @@ def extract_bms_table_from_html(source: str, is_overjoy=False) -> pd.DataFrame:
         is_overjoy: Overjoy 表のときのみ True を指定
 
     Returns: 難易度表データ
-             index: bmsid
-             columns: level, title, url1, url2, comment
+             (bmsid, level, title, url1, url2, comment)
     """
     """
     JavaScript を真面目にパースするのはちょっと大変なので以下のような方針。
@@ -228,9 +225,7 @@ def extract_bms_table_from_html(source: str, is_overjoy=False) -> pd.DataFrame:
     columns = ["", "level", "title", "bmsid", "url1", "url2", "comment"]
     return (pd.DataFrame(mname, columns=columns)  # DataFrame にして
               .drop("", axis=1)  # 最初の列を落として
-              .astype({"bmsid": int})  # bmsid を数値にして
-              .set_index("bmsid")  # bmsid を index として
-              .sort_index())  # ソートして返す
+              .astype({"bmsid": int}))  # bmsid を数値にして返す
 
 
 def _extract_scripts(source: str) -> str:

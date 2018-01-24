@@ -18,8 +18,7 @@ def get_ranking_data(hash_value: str) -> pd.DataFrame:
 
     Returns:
         ランキングデータ
-        index: playerid
-        columns: name, clear, notes, combo, pg, gr, minbp
+        (id, name, clear, notes, combo, pg, gr, minbp)
 
     """
     validate_hash(hash_value)
@@ -40,9 +39,8 @@ def get_ranking_data_detail(id_or_hash: Union[int, str], mode: str, interval: fl
 
     Returns:
         ランキングデータ
-        index: playerid
-        columns: rank, name, sp_dan, dp_dan, clear, dj_level, score, max_score, score_percentage,
-                 combo, notes, minbp, pg, gr, gd, bd, pr, gauge_option, random_option, input, body, comment
+        (id, rank, name, sp_dan, dp_dan, clear, dj_level, score, max_score, score_percentage,
+         combo, notes, minbp, pg, gr, gd, bd, pr, gauge_option, random_option, input, body, comment)
 
     """
     if mode in ["bmsid", "courseid"]:
@@ -62,7 +60,7 @@ def get_ranking_data_detail(id_or_hash: Union[int, str], mode: str, interval: fl
     page_count = (player_count + 99) // 100  # プレイヤ数を 100 で割って切り上げるとページ数
 
     data_frames = [extract_ranking_from_html(source)]  # 以下でここに各ページを DataFrame に変換したものを格納
-    player_ids = set(data_frames[0].index)  # プレイヤ ID の集合 (ランキング更新の判定に使う)
+    player_ids = set(data_frames[0]["id"])  # プレイヤ ID の集合 (ランキング更新の判定に使う)
 
     # 2 ページ目以降を順に取得
     for page in range(2, page_count + 1):
@@ -75,7 +73,7 @@ def get_ranking_data_detail(id_or_hash: Union[int, str], mode: str, interval: fl
 
         data_frames.append(extract_ranking_from_html(source))
 
-        index = set(data_frames[-1].index)  # このページのプレイヤ ID の集合
+        index = set(data_frames[-1]["id"])  # このページのプレイヤ ID の集合
         if player_ids & index:  # に、もし今までに見たプレイヤ ID と 1 つでも重複があれば
             raise InconsistentDataError  # 途中でランキングが更新されてしまっているので終了
 
