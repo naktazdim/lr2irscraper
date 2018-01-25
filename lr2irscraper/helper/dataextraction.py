@@ -8,9 +8,11 @@ LR2IR の search.cgi や getrankingxml.cgi などの出力からデータを読�
 import re
 import xml.etree.ElementTree
 from html.parser import HTMLParser
-from ast import literal_eval
+from typing import List, Union
 
 import pandas as pd
+import pyjsparser
+
 
 from lr2irscraper.helper.exceptions import ParseError
 
@@ -184,31 +186,8 @@ def extract_bms_table_from_html(source: str, is_overjoy=False) -> pd.DataFrame:
     Returns: 難易度表データ
              (bmsid, level, title, url1, url2, comment)
     """
-    """
-    JavaScript を真面目にパースするのはちょっと大変なので以下のような方針。
-    発狂難易度表や Overjoy 表では上手くいくが、他の表では半数程度しか成功しない。
-         1. <script> タグの中身を抽出
-         2. var mname = [ を探す
-         3. ]; を ([] の対応を考えずに総当りで) 探す。[] 内が literal_eval() で解釈できるまで続ける
-
-    literal_eval() はあくまで Python のリテラルを解釈するものなので、
-    「JavaScript としては正しいが Python としては正しくない」ようなものが入っているとうまくいかない。
-    実際にあるのは「カンマの連続」「コメントアウト」「全角スペース (!)」
-
-    ちなみに、json.loads() でパースしようとするのはいわゆる末尾カンマのせいで全くうまく行かない。
-    コメントアウトや全角スペースも JSON では許容されていないのであまり意味がない。
-    """
-    script = _extract_scripts(source)
-
-    mname_with_garbage = re.search("var\s+?mname\s*?=\s*?(\[.*)", script, re.DOTALL).group(1)  # var mname = [ 以下末尾まで
-    mname = None
-    for match in re.finditer("\](?=;)", mname_with_garbage):  # ]; を探して
-        try:
-            mname = literal_eval(mname_with_garbage[: match.end()])  # [] 内を literal_eval() でパースしてみる
-            break  # できたら抜ける
-        except SyntaxError:
-            continue  # パースできなければ次の ]; を探す
-    if mname is None:  # 最後まで literal_eval が成功しなければエラー
+    mname = extract_mname(source)
+    if mname is None:
         raise ParseError
 
     # Overjoy 表は構成が異なるので特殊処理
@@ -228,7 +207,50 @@ def extract_bms_table_from_html(source: str, is_overjoy=False) -> pd.DataFrame:
               .astype({"bmsid": int}))  # bmsid を数値にして返す
 
 
-def _extract_scripts(source: str) -> str:
+def extract_mname(source: str) -> Union[List[List], None]:
+    """
+    html のソースから <script> タグ内に書かれた var mname = [] という文を探し、その右辺を返す。
+    見つからない場合は None を返す。複数ある場合は初めに見つけたものを返す。
+
+    Args:
+        source: ソース (UTF-8 を想定)
+
+    Returns: 難易度表データ
+
+    """
+    def nodes(tree: dict) -> List[dict]:
+        ret = [tree]
+        for value in tree.values():
+            if isinstance(value, dict):
+                ret.extend(nodes(value))
+            elif isinstance(value, list):
+                for node in value:
+                    ret.extend(nodes(node))
+        return ret
+
+    def search_mname(tree: dict) -> Union[List[List], None]:
+        for node in nodes(tree):  # 構文木のノードを一つずつ見ていって、
+            if node["type"] == "VariableDeclarator" and node["id"]["name"] == "mname":  # var mname = なら
+                # node["init"] が = の右辺 (Array の Array) の構文木なので、それを Python の list の list にして返す
+                return [[column["value"]
+                         for column in item["elements"]]
+                        for item in node["init"]["elements"]]
+        return None  # var mname = がみつからなければ None を返す
+
+    for script in _extract_scripts(source):  # <script> タグの中身のうち、
+        if re.search("var\s+mname\s*=", script) is None:  # var mname = がないものは
+            continue  # とばして、
+        # var mname = があるものについて、
+
+        script = re.sub("(^\s*<!--|-->\s*$)", "", script)  # <!-- --> を除去して
+        script_tree = pyjsparser.parse(script)  # パースして
+        mname = search_mname(script_tree)  # 「var mname = [] の右辺」を探して、
+        if mname is not None:  # ちゃんと得られれば
+            return mname  # それを返す
+    return None  # var mname = が一つも見つからなければ None を返す
+
+
+def _extract_scripts(source: str) -> List[str]:
     """ html から <script> タグの中身を抽出する。
 
     Args:
@@ -241,7 +263,7 @@ def _extract_scripts(source: str) -> str:
         def __init__(self):
             HTMLParser.__init__(self)
             self._in_script_tag = False
-            self.script = ""
+            self.script = []
 
         def handle_starttag(self, tag, attrs):
             if tag.lower() == "script":
@@ -253,7 +275,7 @@ def _extract_scripts(source: str) -> str:
 
         def handle_data(self, data):
             if self._in_script_tag:
-                self.script += data + "\n"
+                self.script.append(data)
 
     script_extractor = ScriptExtractor()
     script_extractor.feed(source)
