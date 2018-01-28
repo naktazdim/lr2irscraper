@@ -11,6 +11,7 @@ from html.parser import HTMLParser
 from typing import List, Union
 
 import pandas as pd
+from pandas.api.types import CategoricalDtype
 import pyjsparser
 
 
@@ -73,13 +74,40 @@ def extract_ranking_from_html(source: str) -> pd.DataFrame:
         "<td>(.*?)</td><td>(.*?)</td><td>(.*?)</td><td>(LR2)</td></tr>\n"
         "  <tr><td colspan = \"16\" class=\"gray\">(.*?)</td></tr>")
     # 上記の正規表現のグループ (括弧) がそれぞれ順に以下の値に対応する
-    columns = ["rank", "playerid", "name", "sp_dan", "dp_dan", "clear", "dj_level",
+    columns = ["rank", "id", "name", "sp_dan", "dp_dan", "clear", "dj_level",
                "score", "max_score", "score_percentage", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr",
                "gauge_option", "random_option", "input", "body", "comment"]
     # うち、整数値のものとカテゴリ変数のもの
-    ints = ["rank", "playerid", "score", "max_score", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr"]
-    categories = ["sp_dan", "dp_dan", "clear", "dj_level", "gauge_option", "random_option", "input", "body"]
-    
+    ints = ["rank", "id", "score", "max_score", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr"]
+    categories = {
+        "sp_dan": CategoricalDtype(
+                categories=["-",
+                            "☆01", "☆02", "☆03", "☆04", "☆05", "☆06", "☆07", "☆08", "☆09", "☆10",
+                            "★01", "★02", "★03", "★04", "★05", "★06", "★07", "★08", "★09", "★10", "★★", "(^^)"],
+                ordered=True),
+        "dp_dan": CategoricalDtype(
+                categories=["-",
+                            "☆01", "☆02", "☆03", "☆04", "☆05", "☆06", "☆07", "☆08", "☆09", "☆10",
+                            "★01", "★02", "★03", "★04", "★05", "★06", "★07", "★08", "★09", "★10", "★★", "(^^)"],
+                ordered=True),
+        "clear": CategoricalDtype(
+                # 先頭の "" は内部コードを xml 側の数値とあわせるためのダミー
+                categories=["", "FAILED", "EASY", "CLEAR", "HARD", "FULLCOMBO", "★FULLCOMBO"],
+                ordered=True),
+        "dj_level": CategoricalDtype(
+                categories=["F", "E", "D", "C", "B", "A", "AA", "AAA"],
+                ordered=True),
+        "gauge_option": CategoricalDtype(
+                categories=["易", "普", "難", "死", "PA", "GA"],
+                ordered=False),  # "GA" があるので ordered とは言えない
+        "input": CategoricalDtype(
+                categories=["BM", "KB", "MIDI"],
+                ordered=False),
+        "body": CategoricalDtype(
+                categories=["LR2"],
+                ordered=False),
+    }
+
     lines = source.split("\n")
 
     try:
@@ -94,10 +122,11 @@ def extract_ranking_from_html(source: str) -> pd.DataFrame:
         if match is None:  # マッチしなければ
             break  # そこで終了
         records.append(match.groups())
+    
     return (
         pd.DataFrame(records, columns=columns)
           .astype({column: int for column in ints})
-          .astype({column: "category" for column in categories})
+          .astype({column: category for column, category in categories.items()})
     )
 
 

@@ -37,6 +37,7 @@ class TestDataExtraction(unittest.TestCase):
             with self.subTest(file=file):
                 df = extract_ranking_from_html(self.resource(file))
                 self.assertEqual(df.shape, (size, 23))
+                self.assertTrue(df.notnull().values.all())
 
     def test_extract_ranking_from_html_error(self):
         files = ["test_out_of_bounds.html", "test_unregistered.html", "test_unregistered2.html"]
