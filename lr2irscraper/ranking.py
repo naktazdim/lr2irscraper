@@ -19,6 +19,8 @@ def get_ranking_data(hash_value: str) -> pd.DataFrame:
     Returns:
         ランキングデータ
         (id, name, clear, notes, combo, pg, gr, minbp)
+        clear は 1-5 の数値で、FAILED, EASY, CLEAR, HARD, FULLCOMBO に対応する。
+        ★FULLCOMBO の情報は取得できない (FULLCOMBO と同じく 5 になる)。
 
     """
     validate_hash(hash_value)
