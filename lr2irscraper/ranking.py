@@ -48,7 +48,7 @@ def get_ranking_data_detail(id_or_hash: Union[int, str], mode: str, interval: fl
     elif mode == "hash":
         validate_hash(id_or_hash)
     else:
-        raise ValueError("{}: mode must be 'bms', 'course' or 'hash'".format(mode))
+        raise ValueError("{}: mode must be 'bmsid', 'courseid' or 'hash'".format(mode))
 
     # まず 1 ページ目を取得し、そこから諸々の情報を得る
     source = fetch_ranking_html(id_or_hash, mode, 1)
