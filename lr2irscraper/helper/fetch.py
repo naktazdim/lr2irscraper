@@ -19,6 +19,7 @@ def fetch(url: str, encoding: str = "auto") -> str:
 
     """
     r = _session.get(url)
+    r.raise_for_status()
     r.encoding = r.apparent_encoding if encoding == "auto" else encoding
     return r.text
 
