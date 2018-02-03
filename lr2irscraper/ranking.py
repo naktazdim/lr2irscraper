@@ -2,7 +2,7 @@
 from time import sleep
 
 from lr2irscraper.helper.fetch import *
-from lr2irscraper.helper.dataextraction.ranking import *
+from lr2irscraper.helper.data_extraction.ranking import *
 from lr2irscraper.helper.validation import *
 from lr2irscraper.helper.exceptions import InconsistentDataError, UnregisteredError
 

@@ -5,7 +5,7 @@
 import pandas as pd
 
 from lr2irscraper.helper.fetch import fetch
-from lr2irscraper.helper.dataextraction.bmstable import extract_bms_table_from_html
+from lr2irscraper.helper.data_extraction.bms_table import extract_bms_table_from_html
 
 
 def get_bms_table(url: str, is_overjoy: bool=None) -> pd.DataFrame:

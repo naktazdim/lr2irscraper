@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from lr2irscraper.helper.dataextraction.ranking import *
+from lr2irscraper.helper.data_extraction.ranking import *
 from tests.util import resource
 
 

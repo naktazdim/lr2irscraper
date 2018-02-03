@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from lr2irscraper.helper.dataextraction.bmstablenewstyle import *
+from lr2irscraper.helper.data_extraction.bms_table_new_style import *
 from tests.util import resource
 
 
