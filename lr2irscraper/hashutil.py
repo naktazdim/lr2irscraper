@@ -4,7 +4,7 @@ bmsid/courseid とハッシュ値との相互変換
 """
 
 from lr2irscraper.helper.fetch import *
-from lr2irscraper.helper.dataextraction import *
+from lr2irscraper.helper.dataextraction.ranking import *
 from lr2irscraper.helper.validation import *
 from lr2irscraper.helper.exceptions import UnregisteredError
 

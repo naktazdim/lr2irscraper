@@ -1,18 +1,11 @@
 # -*- coding: utf-8 -*-
 import unittest
-import os
-import codecs
 
-from lr2irscraper.helper.dataextraction import *
+from lr2irscraper.helper.dataextraction.ranking import *
+from tests.util import resource
 
 
-class TestDataExtraction(unittest.TestCase):
-    @classmethod
-    def resource(cls, name: str, encoding: str="cp932"):
-        path = os.path.join(os.path.dirname(__file__), "resources", name)
-        with codecs.open(path, "r", encoding) as f:
-            return f.read()
-
+class TestDataExtractionRanking(unittest.TestCase):
     def test_parse_ranking_xml(self):
         files = ["test.xml", "test_course.xml"]
         shapes = [(318, 8), (95, 8)]
@@ -20,12 +13,12 @@ class TestDataExtraction(unittest.TestCase):
 
         for file, shape, value in zip(files, shapes, values):
             with self.subTest(file):
-                df = extract_ranking_from_xml(self.resource(file))
+                df = extract_ranking_from_xml(resource(file))
                 self.assertEqual(df.shape, shape)
                 self.assertEqual(tuple(df[df["id"] == 35564].values[0]), value)
 
     def test_extract_ranking_from_html(self):
-        df = extract_ranking_from_html(self.resource("test_middle.html"))
+        df = extract_ranking_from_html(resource("test_middle.html"))
         self.assertEqual(
             tuple(df[df["id"] == 35564].values[0]),
             (6645, 35564,  "nakt", "★04", "-", "HARD", "AAA", 3608, 4012, "89.93%",
@@ -35,7 +28,7 @@ class TestDataExtraction(unittest.TestCase):
         sizes = [100, 100, 53, 25, 100]
         for file, size in zip(files, sizes):
             with self.subTest(file=file):
-                df = extract_ranking_from_html(self.resource(file))
+                df = extract_ranking_from_html(resource(file))
                 self.assertEqual(df.shape, (size, 23))
                 self.assertTrue(df.notnull().values.all())
 
@@ -43,7 +36,7 @@ class TestDataExtraction(unittest.TestCase):
         files = ["test_out_of_bounds.html", "test_unregistered.html", "test_unregistered2.html"]
         for file in files:
             with self.subTest(file=file):
-                self.assertRaises(ParseError, extract_ranking_from_html, self.resource(file))
+                self.assertRaises(ParseError, extract_ranking_from_html, resource(file))
 
     def test_read_player_count_from_html(self):
         files = ["test_head.html", "test_middle.html", "test_tail.html", "test_less_than_100.html", "test_course.html"]
@@ -51,7 +44,7 @@ class TestDataExtraction(unittest.TestCase):
 
         for file, player_count in zip(files, player_counts):
             with self.subTest(file=file):
-                self.assertEqual(read_player_count_from_html(self.resource(file)),
+                self.assertEqual(read_player_count_from_html(resource(file)),
                                  player_count)
 
     def test_chart_unregistered(self):
@@ -61,7 +54,7 @@ class TestDataExtraction(unittest.TestCase):
 
         for file, answer in zip(files, answers):
             with self.subTest(file=file):
-                self.assertEqual(chart_unregistered(self.resource(file)), answer)
+                self.assertEqual(chart_unregistered(resource(file)), answer)
 
     def test_read_bmsid_from_html(self):
         files = ["test_middle.html", "test_less_than_100.html"]
@@ -69,7 +62,7 @@ class TestDataExtraction(unittest.TestCase):
 
         for file, bmsid in zip(files, bmsids):
             with self.subTest(file=file):
-                self.assertEqual(read_bmsid_from_html(self.resource(file)), bmsid)
+                self.assertEqual(read_bmsid_from_html(resource(file)), bmsid)
 
     def test_read_courseid_from_html(self):
         files = ["test_course.html"]
@@ -77,7 +70,7 @@ class TestDataExtraction(unittest.TestCase):
 
         for file, bmsid in zip(files, bmsids):
             with self.subTest(file=file):
-                self.assertEqual(read_courseid_from_html(self.resource(file)), bmsid)
+                self.assertEqual(read_courseid_from_html(resource(file)), bmsid)
 
     def test_read_course_hash_from_course_file(self):
         files = ["course.lr2crs"]
@@ -89,23 +82,7 @@ class TestDataExtraction(unittest.TestCase):
 
         for file, course_hash in zip(files, course_hashes):
             with self.subTest(file=file):
-                self.assertEqual(read_course_hash_from_course_file(self.resource(file)), course_hash)
-
-    def test_extract_old_style_bms_table(self):
-        insane = extract_bms_table_from_html(self.resource("insane.html"))
-        self.assertEqual(tuple(insane.iloc[0]),
-                         ("★1", "星の器～STAR OF ANDROMEDA (ANOTHER)", 15,
-                          "<a href='http://bit.ly/eoD0dZ'>ZUN (Arr.sun3)</a>",
-                          "<a href=''></a>",
-                          ""))
-
-        overjoy = extract_bms_table_from_html(self.resource("overjoy.html", "utf-8"), is_overjoy=True)
-        self.assertEqual(tuple(overjoy.iloc[201]),
-                         ("★★5", "FREEDOM DiVE [FOUR DIMENSIONS]", 1031,
-                          "<a href='http://manbow.nothing.sh/event/event.cgi"
-                          "?action=More_def&num=15&event=50'>MAXBEAT</a>",
-                          "<a href='http://airlab.web.fc2.com/'>air</a>",
-                          ""))
+                self.assertEqual(read_course_hash_from_course_file(resource(file)), course_hash)
 
 
 if __name__ == '__main__':
