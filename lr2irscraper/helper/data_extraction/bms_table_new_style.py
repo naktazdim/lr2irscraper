@@ -69,10 +69,15 @@ def make_dataframe_from_header_and_data_json(header_json: str, data_json: str) -
     header = json.loads(header_json)
     data = json.loads(data_json)
 
-    table = pd.DataFrame.from_dict(data, dtype=object).fillna("")
+    if len(data) == 0:
+        # 空の場合も、仕様上の必須カラムは用意しておく。"level" カラムは存在しないと以下の処理で困る
+        table = pd.DataFrame(columns=["md5", "level"], dtype=object)
+    else:
+        table = pd.DataFrame.from_dict(data, dtype=object).fillna("")
 
     tag = header.get("tag") or header["symbol"]
     level_order = header.get("level_order") or table["level"].drop_duplicates().values
+    level_order = list(map(str, level_order))
 
     return (
         table
