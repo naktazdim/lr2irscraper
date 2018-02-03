@@ -12,38 +12,61 @@ import pandas as pd
 import pyjsparser
 from html.parser import HTMLParser
 
-from lr2irscraper.helper.exceptions import ParseError
 
-
-def extract_bms_table_from_html(source: str, is_overjoy=False) -> pd.DataFrame:
-    """ 従来の (『次期難易度表フォーマット』に対応していない) 難易度表データを抽出する。
+def make_dataframe_from_mname(mname: List[List],
+                              is_overjoy: bool=False,
+                              columns: List=None) -> pd.DataFrame:
+    """ mname を DataFrame に変換して返す。
 
     Args:
-        source: ソース (UTF-8 を想定)
+        mname: extract_mname() で抽出した mname
         is_overjoy: Overjoy 表のときのみ True を指定
+        columns: カラム名を指定、省略した場合は (bmsid, level, title, url1, url2, comment)
 
     Returns: 難易度表データ
-             (bmsid, level, title, url1, url2, comment)
+
     """
-    mname = extract_mname(source)
-    if mname is None:
-        raise ParseError
+    df = pd.DataFrame(mname)
 
-    # Overjoy 表は構成が異なるので特殊処理
+    # データからカラム名を取得できないので、適当に決める
+    if columns is None:
+        if is_overjoy:
+            columns = ["id", "level", "title", "ir", "ir3", "original_artist", "sabun", "comment"]
+        else:
+            # 基本構成 (多くはこれ)
+            columns = ["id", "level", "title", "bmsid", "original_artist", "sabun", "comment"]
+
+            # カラム数が 7 のときは上記構成そのままと仮定する (本当はたまに入れ替わっていたりするが)
+            # カラム数が違う場合は後ろに何かが付加されている / 後ろが削られていると仮定する
+            num_columns = len(df.columns)
+            if num_columns > 7:
+                columns += ["unknown{}".format(i) for i in range(1, num_columns - 6)]
+            elif num_columns < 7:
+                columns = columns[:num_columns]
+
+    df.columns = columns
+
+    df["level"] = df["level"].apply(_strip_tags)  # level に <font> タグがついていることがあるので抜く
+    df["title"] = df["title"].apply(_strip_tags)  # title にページ内リンクがついていることがあるので抜く
+    df = df.drop("id", axis=1)  # 最初の列は落とす (表示部で使用されている内部 ID のようなものが入っている)
+
+    # Overjoy 表は構成が違うので特殊処理
     if is_overjoy:
-        mname =\
-            [[record[0],
-              "★" + _strip_tags(record[1]),  # "<font color='red'>★1</font>" → "★★1"
-              _strip_tags(record[2]),  # 譜面名にページ内リンク <a name=""> が付加されていることがあるので除去
-              re.match(".*bmsid=(\d+).*", record[4]).group(1),  # LR2IR へのリンクが必ず貼られているのでそこから bmsid を抽出
-              record[5], record[6], record[7]]
-             for record in mname]
+        # Overjoy 表の場合は bmsid そのものではなくランキングページの URL が格納されている
+        # そこから bmsid を抽出し、"bmsid" カラムに格納する
+        df["bmsid"] = df["ir3"].apply(lambda s: re.match(".*bmsid=(\d+).*", s).group(1))
 
-    # DataFrame に変換して返す
-    columns = ["", "level", "title", "bmsid", "url1", "url2", "comment"]
-    return (pd.DataFrame(mname, columns=columns)  # DataFrame にして
-              .drop("", axis=1)  # 最初の列を落として
-              .astype({"bmsid": int}))  # bmsid を数値にして返す
+        # ランキングページの URL そのものはいらないので抜いてしまう
+        df = df.drop(columns=["ir", "ir3"])
+
+        # データ上はレベル表記は「赤文字で ★+数字」 だが、一般的な「★★+数字」表記に直す
+        # 「赤文字で」の部分は上で抜いてある
+        df["level"] = df["level"].apply(lambda s: "★" + s)
+
+        # 「基本構成」と同じ順に戻しておく
+        df = df[["level", "title", "bmsid", "original_artist", "sabun", "comment"]]
+
+    return df
 
 
 def extract_mname(source: str) -> Union[List[List], None]:
@@ -58,6 +81,8 @@ def extract_mname(source: str) -> Union[List[List], None]:
 
     """
     def nodes(tree: dict) -> List[dict]:
+        if tree is None:  #
+            return []
         ret = [tree]
         for value in tree.values():
             if isinstance(value, dict):
@@ -71,7 +96,7 @@ def extract_mname(source: str) -> Union[List[List], None]:
         for node in nodes(tree):  # 構文木のノードを一つずつ見ていって、
             if node["type"] == "VariableDeclarator" and node["id"]["name"] == "mname":  # var mname = なら
                 # node["init"] が = の右辺 (Array の Array) の構文木なので、それを Python の list の list にして返す
-                return [[column["value"]
+                return [[column["value"] if column is not None else None
                          for column in item["elements"]]
                         for item in node["init"]["elements"]]
         return None  # var mname = がみつからなければ None を返す
