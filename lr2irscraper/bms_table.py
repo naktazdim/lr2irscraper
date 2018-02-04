@@ -35,6 +35,7 @@ def get_bms_table(url: str) -> pd.DataFrame:
             raise ParseError("Failed to detect bms table: {}".format(url))
 
         bms_table = make_dataframe_from_mname(mname, columns=column_name(url))
+        bms_table = split_url(bms_table, url)
         return overjoy(bms_table) if "http://achusi.main.jp/overjoy/" in url else bms_table
     else:  # 「ヘッダ部」のパスが取得できれば新形式とみなして解釈
         header_path = urljoin(url, header_path)  # 絶対パスに変換 (header_path がもともと絶対パスのときも正しく動作する)

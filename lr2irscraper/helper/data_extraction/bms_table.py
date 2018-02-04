@@ -139,6 +139,53 @@ def column_name(url: str) -> List[str]:
     return default_columns  # どれでもなければデフォルト値
 
 
+def split_url(bms_table: pd.DataFrame, bms_table_url: str):
+    """
+    アーティスト・差分のカラムには a タグで URL が貼られていることが多い。
+    そこから URL とテキストを分離して、それぞれ別のカラムに格納する。
+    それぞれのカラム名が artist, diff であると仮定している。
+
+    Args:
+        bms_table: 元の難易度表データ (DataFrame)
+        bms_table_url: 難易度表の URL (差分が相対パスなことがあるので)
+
+    Returns: URL とテキストを分離した DataFrame
+        artist -> artist, url
+        diff -> name_diff, url_diff
+        のように分割される。「次期難易度表フォーマット」とあわせている。
+
+    """
+    href_regexp = re.compile(r"""<a\s+href=["']([^"']+?)["']>""", re.IGNORECASE)
+    url_regexp = re.compile(r"https?://[!\w/:%#$&?()~.=+-]+", re.IGNORECASE)
+    d = {"artist": ("artist", "url"), "diff": ("name_diff", "url_diff")}
+
+    def extract_text(item: str):
+        item = _strip_tags(item)
+        item = url_regexp.sub("", item)
+        return item
+
+    def extract_url(item: str):
+        m = href_regexp.search(item)
+        if m is None:
+            m = url_regexp.search(item)
+            if m is None:
+                return ""
+            else:
+                url = m.group(0)
+        else:
+            url = m.group(1)
+        return urljoin(bms_table_url, url)
+
+    for original_column, (text_column, url_column) in d.items():
+        if original_column in bms_table.columns:
+            orig = bms_table[original_column]
+            bms_table = bms_table.drop(columns=original_column)
+            bms_table[text_column] = orig.apply(extract_text)
+            bms_table[url_column] = orig.apply(extract_url)
+
+    return bms_table
+
+
 def overjoy(bms_table: pd.DataFrame):
     """
     Overjoy 用特殊処理
