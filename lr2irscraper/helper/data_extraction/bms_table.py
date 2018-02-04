@@ -8,6 +8,7 @@
 import re
 from typing import List, Union
 
+import numpy as np
 import pandas as pd
 import pyjsparser
 from html.parser import HTMLParser
@@ -16,45 +17,9 @@ from urllib.parse import urljoin
 from lr2irscraper.helper.exceptions import ParseError
 
 
-def make_dataframe_from_mname(mname: List[List],
-                              columns: List=None) -> pd.DataFrame:
-    """ mname を DataFrame に変換して返す。
-
-    Args:
-        mname: extract_mname() で抽出した mname
-        columns: カラム名を指定
-
-    Returns: 難易度表データ
-
+def extract_mname(source: str) -> Union[pd.DataFrame, None]:
     """
-    df = pd.DataFrame(mname)
-
-    # カラムを指定しなかった場合の初期値
-    if columns is None:
-        columns = ["id", "level", "title", "bmsid", "artist", "diff", "comment"]
-
-    # カラム数が違う場合は後ろに何かが付加されている / 後ろが削られていると仮定する
-    num_columns = len(df.columns)
-    if num_columns > len(columns):
-        columns += ["unknown{}".format(i) for i in range(1, num_columns - len(columns) + 1)]
-    elif num_columns < len(columns):
-        columns = columns[:num_columns]
-
-    df.columns = columns
-
-    df = df.dropna(axis=0, subset=["id"])  # id が空欄になっている項目はダミーデータとみなして抜く
-    df["id"] = df["id"].astype(int)  # float になっているので int に戻す
-
-    df["level"] = df["level"].apply(_strip_tags)  # level に <font> タグがついていることがあるので抜く
-    df["title"] = df["title"].apply(_strip_tags)  # title にページ内リンクがついていることがあるので抜く
-    # その他のカラムのタグは除去しない
-
-    return df
-
-
-def extract_mname(source: str) -> Union[List[List], None]:
-    """
-    html のソースから <script> タグ内に書かれた var mname = [] という文を探し、その右辺を返す。
+    html のソースから <script> タグ内に書かれた var mname = [] という文を探し、その右辺を DataFrame の形で返す。
     見つからない場合は None を返す。複数ある場合は初めに見つけたものを返す。
 
     Args:
@@ -75,14 +40,26 @@ def extract_mname(source: str) -> Union[List[List], None]:
                     ret.extend(nodes(node))
         return ret
 
-    def search_mname(tree: dict) -> Union[List[List], None]:
+    def search_mname_node(tree: dict) -> Union[dict, None]:
         for node in nodes(tree):  # 構文木のノードを一つずつ見ていって、
             if node["type"] == "VariableDeclarator" and node["id"]["name"] == "mname":  # var mname = なら
-                # node["init"] が = の右辺 (Array の Array) の構文木なので、それを Python の list の list にして返す
-                return [[column["value"] if column is not None else None
-                         for column in item["elements"]]
-                        for item in node["init"]["elements"]]
+                # node["init"] が = の右辺 (Array の Array) の構文木
+                return node["init"]
         return None  # var mname = がみつからなければ None を返す
+
+    def make_mname_dataframe(mname_node: dict) -> pd.DataFrame:
+        df = pd.DataFrame(
+            [[item["value"] if item is not None else None
+              for item in column["elements"]]
+             for column in mname_node["elements"]]
+        )
+
+        # pyjsparser の時点で js の整数リテラルが Python の float になってしまっている
+        # mname の各行の先頭の要素は整数もしくは null である
+        # null のものはダミーデータとみなして抜いてしまい、あとは int に戻して返す
+        df = df.dropna(axis=0, subset=[0])
+        df[0] = df[0].astype(int)
+        return df
 
     for script in _extract_scripts(source):  # <script> タグの中身のうち、
         if re.search("var\s+mname\s*=", script) is None:  # var mname = がないものは
@@ -91,10 +68,57 @@ def extract_mname(source: str) -> Union[List[List], None]:
 
         script = re.sub("(^\s*<!--|-->\s*$)", "", script)  # <!-- --> を除去して
         script_tree = pyjsparser.parse(script)  # パースして
-        mname = search_mname(script_tree)  # 「var mname = [] の右辺」を探して、
-        if mname is not None:  # ちゃんと得られれば
-            return mname  # それを返す
+        mname_node = search_mname_node(script_tree)  # 「var mname = [] (の右辺)」を探して、
+        if mname_node is None:  # なければ
+            continue  # 次の <script> タグへ
+        return make_mname_dataframe(mname_node)  # あれば DataFrame に変換して返す
     return None  # var mname = が一つも見つからなければ None を返す
+
+
+def postprocess(mname: pd.DataFrame, bms_table_url: str):
+    """
+    読みやすいように諸々の後処理をする。
+
+    Args:
+        mname: extract_mname() の返り値
+        bms_table_url: 表の URL
+
+    Returns: 後処理をしたあとの DataFrame
+
+    """
+    # まずはカラム名を付加
+    add_column_name(mname, bms_table_url)
+
+    # 未使用カラムを除去
+    if "unused" in mname.columns:
+        mname = mname.drop(columns="unused")
+
+    # アーティスト・差分カラムからそれぞれの URL とテキストを分離
+    mname = split_url(mname, bms_table_url)
+
+    # id カラムはウェブサイト上で表示する際の処理に使われているだけなので抜いてしまう
+    mname = mname.drop(columns="id")
+
+    # level に <font> タグが、title にページ内リンクがついていることがあるのでそれぞれ抜く
+    mname[["level", "title"]] = mname[["level", "title"]].applymap(_strip_tags)
+
+    # Overjoy 表は少し構成が特殊なので専用処理
+    if "achusi.main.jp/overjoy" in bms_table_url:
+        mname = overjoy(mname)
+
+    # title と bmsid がともに空の行はダミーデータとみなして除去
+    # (片方だけ抜けていることはしばしばある)
+    mname = mname[~((mname[["title", "bmsid"]] == "").all(axis=1))]
+
+    # 並べ替え
+    # level, title, bmsid, artist, url, name_diff, url_diff, comment, その他 の順
+    column_order_base = ["level", "title", "bmsid", "artist", "url", "name_diff", "url_diff", "comment"]
+    column_order = (
+        [column for column in column_order_base if column in mname.columns]
+        + [column for column in mname.columns if column not in column_order_base]
+    )
+
+    return mname[column_order]
 
 
 def column_name(url: str) -> List[str]:
@@ -115,7 +139,8 @@ def column_name(url: str) -> List[str]:
     d = ["id", "level", "title", "bmsid", "rate", "unused", "comment"]
     e = ["id", "level", "title", "bmsid", "artist", "diff", "comment", "speed", "gauge"]
     f = ["id", "level", "title", "bmsid", "comment", "artist", "diff"]
-    g = ["id", "level", "title", "bmsid", "unused1", "diff", "artist", "comment", "unused2"]
+    g = ["id", "level", "title", "bmsid", "unused", "diff", "artist", "comment", "unused"]
+    h = ["id", "level", "title", "bmsid", "artist", "diff", "original_level", "comment"]
     tables = [
         (a, "10tan.web.fc2.com"),
         (a, "bmsinsane2.web.fc2.com"),
@@ -132,11 +157,36 @@ def column_name(url: str) -> List[str]:
         (e, "infinity.s60.xrea.com/bms/renda.html"),
         (f, "lunatic8192alice.web.fc2.com/ondo.html"),
         (g, "www015.upp.so-net.ne.jp/deep_throat/nanido/dp_saranan.html"),
+        (h, "bmsohaka.web.fc2.com/cemetery.html")
     ]
     for columns, table_url in tables:
         if table_url in url:  # 部分一致
             return columns
     return default_columns  # どれでもなければデフォルト値
+
+
+def add_column_name(mname: pd.DataFrame, bms_table_url: str):
+    """
+    URL からカラム名を判定し、mname に付加する。mname そのものを変更する。
+
+    Args:
+        mname: extract_mname() の返り値
+        bms_table_url: 難易度表の URL
+
+    """
+    # とりあえず自動判定
+    columns = column_name(bms_table_url)
+
+    # もしカラム数が違う場合は後ろに何かが付加されている / 後ろが削られていると仮定する
+    num_columns = len(mname.columns)
+    if num_columns > len(columns):
+        columns += ["unknown{}".format(i) for i in range(1, num_columns - len(columns) + 1)]
+    elif num_columns < len(columns):
+        columns = columns[:num_columns]
+
+    mname.columns = columns
+
+    return mname
 
 
 def split_url(bms_table: pd.DataFrame, bms_table_url: str):
@@ -197,7 +247,7 @@ def overjoy(bms_table: pd.DataFrame):
 
     """
     # データ上はレベル表記は「★+数字」 だが、一般的な「★★+数字」表記に直す
-    # (もっというと <font> タグで赤文字になっているのだが、それはパースの際に抜いてある)
+    # (もっというと <font> タグで赤文字になっているのだが、それは事前に抜いてあるものとする)
     bms_table["level"] = bms_table["level"].apply(lambda s: "★" + s)
 
     # Overjoy 表は bmsid カラムがなく、代わりに ir3 カラムにランキングページの URL が格納されている
@@ -206,7 +256,7 @@ def overjoy(bms_table: pd.DataFrame):
 
     # ir3 カラムは要らないので抜いてしまう。
     # ir カラムには古いランキングページ？へのリンクが入っているが、これも要らないので抜いてしまう
-    bms_table.drop(columns=["ir", "ir3"])
+    bms_table = bms_table.drop(columns=["ir", "ir3"])
 
     return bms_table
 
