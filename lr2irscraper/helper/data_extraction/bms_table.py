@@ -11,60 +11,43 @@ from typing import List, Union
 import pandas as pd
 import pyjsparser
 from html.parser import HTMLParser
+from urllib.parse import urljoin
+
+from lr2irscraper.helper.exceptions import ParseError
 
 
 def make_dataframe_from_mname(mname: List[List],
-                              is_overjoy: bool=False,
                               columns: List=None) -> pd.DataFrame:
     """ mname を DataFrame に変換して返す。
 
     Args:
         mname: extract_mname() で抽出した mname
-        is_overjoy: Overjoy 表のときのみ True を指定
-        columns: カラム名を指定、省略した場合は (bmsid, level, title, url1, url2, comment)
+        columns: カラム名を指定
 
     Returns: 難易度表データ
 
     """
     df = pd.DataFrame(mname)
 
-    # データからカラム名を取得できないので、適当に決める
+    # カラムを指定しなかった場合の初期値
     if columns is None:
-        if is_overjoy:
-            columns = ["id", "level", "title", "ir", "ir3", "original_artist", "sabun", "comment"]
-        else:
-            # 基本構成 (多くはこれ)
-            columns = ["id", "level", "title", "bmsid", "original_artist", "sabun", "comment"]
+        columns = ["id", "level", "title", "bmsid", "artist", "diff", "comment"]
 
-            # カラム数が 7 のときは上記構成そのままと仮定する (本当はたまに入れ替わっていたりするが)
-            # カラム数が違う場合は後ろに何かが付加されている / 後ろが削られていると仮定する
-            num_columns = len(df.columns)
-            if num_columns > 7:
-                columns += ["unknown{}".format(i) for i in range(1, num_columns - 6)]
-            elif num_columns < 7:
-                columns = columns[:num_columns]
+    # カラム数が違う場合は後ろに何かが付加されている / 後ろが削られていると仮定する
+    num_columns = len(df.columns)
+    if num_columns > len(columns):
+        columns += ["unknown{}".format(i) for i in range(1, num_columns - len(columns) + 1)]
+    elif num_columns < len(columns):
+        columns = columns[:num_columns]
 
     df.columns = columns
 
+    df = df.dropna(axis=0, subset=["id"])  # id が空欄になっている項目はダミーデータとみなして抜く
+    df["id"] = df["id"].astype(int)  # float になっているので int に戻す
+
     df["level"] = df["level"].apply(_strip_tags)  # level に <font> タグがついていることがあるので抜く
     df["title"] = df["title"].apply(_strip_tags)  # title にページ内リンクがついていることがあるので抜く
-    df = df.drop("id", axis=1)  # 最初の列は落とす (表示部で使用されている内部 ID のようなものが入っている)
-
-    # Overjoy 表は構成が違うので特殊処理
-    if is_overjoy:
-        # Overjoy 表の場合は bmsid そのものではなくランキングページの URL が格納されている
-        # そこから bmsid を抽出し、"bmsid" カラムに格納する
-        df["bmsid"] = df["ir3"].apply(lambda s: re.match(".*bmsid=(\d+).*", s).group(1))
-
-        # ランキングページの URL そのものはいらないので抜いてしまう
-        df = df.drop(columns="ir3")
-
-        # データ上はレベル表記は「赤文字で ★+数字」 だが、一般的な「★★+数字」表記に直す
-        # 「赤文字で」の部分は上で抜いてある
-        df["level"] = df["level"].apply(lambda s: "★" + s)
-
-        # 「基本構成」と同じ順に戻しておく
-        df = df[["level", "title", "bmsid", "original_artist", "sabun", "comment", "ir"]]
+    # その他のカラムのタグは除去しない
 
     return df
 
@@ -112,6 +95,73 @@ def extract_mname(source: str) -> Union[List[List], None]:
         if mname is not None:  # ちゃんと得られれば
             return mname  # それを返す
     return None  # var mname = が一つも見つからなければ None を返す
+
+
+def column_name(url: str) -> List[str]:
+    """
+    旧難易度表の URL からカラム名を得る。
+
+    Args:
+        url: 難易度表の URL
+
+    Returns: カラム名
+
+    """
+    # 気合
+    default_columns = ["id", "level", "title", "bmsid", "artist", "diff", "comment"]
+    a = ["id", "level", "title", "bmsid", "diff", "artist", "comment"]
+    b = ["id", "level", "title", "bmsid",  "comment", "artist", "diff", "unused"]
+    c = ["id", "level", "title", "ir", "ir3", "artist", "diff", "comment"]
+    d = ["id", "level", "title", "bmsid", "rate", "unused", "comment"]
+    e = ["id", "level", "title", "bmsid", "artist", "diff", "comment", "speed", "gauge"]
+    f = ["id", "level", "title", "bmsid", "comment", "artist", "diff"]
+    g = ["id", "level", "title", "bmsid", "unused1", "diff", "artist", "comment", "unused2"]
+    tables = [
+        (a, "10tan.web.fc2.com"),
+        (a, "bmsinsane2.web.fc2.com"),
+        (a, "www53.atpages.jp/merikuribms"),
+        (a, "be5moti.web.fc2.com/gengaojoy"),
+        (a, "hebonet.web.fc2.com/bms/lr2jun.html"),
+        (a, "www.geocities.jp/bmsetc/sabun/hyou.html"),
+        (a, "2nd.geocities.jp/yoshi_65c816/was/a.html"),
+        (a, "vertigo_.web.fc2.com/yumerusabunhyou.html"),
+        (a, "uetnosubarashikikusosabun.web.fc2.com/uet.html"),
+        (b, "slash24th.web.fc2.com"),
+        (c, "achusi.main.jp/overjoy"),
+        (d, "sabosabun.tank.jp/record.html"),
+        (e, "infinity.s60.xrea.com/bms/renda.html"),
+        (f, "lunatic8192alice.web.fc2.com/ondo.html"),
+        (g, "www015.upp.so-net.ne.jp/deep_throat/nanido/dp_saranan.html"),
+    ]
+    for columns, table_url in tables:
+        if table_url in url:  # 部分一致
+            return columns
+    return default_columns  # どれでもなければデフォルト値
+
+
+def overjoy(bms_table: pd.DataFrame):
+    """
+    Overjoy 用特殊処理
+
+    Args:
+        bms_table: Overjoy 表の DataFrame
+
+    Returns: 処理後の DataFrame
+
+    """
+    # データ上はレベル表記は「★+数字」 だが、一般的な「★★+数字」表記に直す
+    # (もっというと <font> タグで赤文字になっているのだが、それはパースの際に抜いてある)
+    bms_table["level"] = bms_table["level"].apply(lambda s: "★" + s)
+
+    # Overjoy 表は bmsid カラムがなく、代わりに ir3 カラムにランキングページの URL が格納されている
+    # そこから bmsid を抽出し、bmsid カラムを作って格納する
+    bms_table["bmsid"] = bms_table["ir3"].apply(lambda s: re.match(".*bmsid=(\d+).*", s).group(1))
+
+    # ir3 カラムは要らないので抜いてしまう。
+    # ir カラムには古いランキングページ？へのリンクが入っているが、これも要らないので抜いてしまう
+    bms_table.drop(columns=["ir", "ir3"])
+
+    return bms_table
 
 
 def _extract_scripts(source: str) -> List[str]:
