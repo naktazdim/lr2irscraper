@@ -35,7 +35,7 @@ def get_bms_table(url: str, is_overjoy: bool=None) -> pd.DataFrame:
     if header_path is None:  # なければ旧形式とみなして解釈
         mname = extract_mname(source)
         if mname is None:  # 旧形式としても解釈できなければ例外を送出して終了
-            raise ParseError
+            raise ParseError("Failed to detect bms table: {}".format(url))
         return make_dataframe_from_mname(mname, is_overjoy=is_overjoy)
     else:  # 「ヘッダ部」のパスが取得できれば新形式とみなして解釈
         header_path = urljoin(url, header_path)  # 絶対パスに変換 (header_path がもともと絶対パスのときも正しく動作する)

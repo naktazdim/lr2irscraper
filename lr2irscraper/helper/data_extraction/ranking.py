@@ -112,7 +112,7 @@ def extract_ranking_from_html(source: str) -> pd.DataFrame:
     try:
         header_line_number = lines.index(header)  # ヘッダ行が何行目かを取得
     except ValueError:  # もし見つからなければ
-        raise ParseError
+        raise ParseError("Failed to detect ranking data")
 
     # 気合いでパース
     records = []
@@ -155,7 +155,7 @@ def read_player_count_from_html(source: str) -> int:
     """
     match = re.search("  <tr><th>人数</th><td>(\d+)</td><td>\d+</td><td>[\d.]+%</td></tr>", source)
     if match is None:
-        raise ParseError
+        raise ParseError("Failed to detect player count")
     return int(match.group(1))
 
 
@@ -170,7 +170,7 @@ def read_bmsid_from_html(source: str) -> int:
     """
     match = re.search("<a href=\"search\.cgi\?mode=editlogList&bmsid=(\d+)\">", source)
     if match is None:
-        raise ParseError
+        raise ParseError("Failed to detect bmsid")
     return int(match.group(1))
 
 
@@ -185,7 +185,7 @@ def read_courseid_from_html(source: str) -> int:
     """
     match = re.search("<a href =\"search\.cgi\?mode=downloadcourse&courseid=(\d+)\">", source)
     if match is None:
-        raise ParseError
+        raise ParseError("Failed to detect courseid")
     return int(match.group(1))
 
 
@@ -200,5 +200,5 @@ def read_course_hash_from_course_file(source: str) -> str:
     """
     match = re.search("<hash>([0-9a-f]{160})</hash>", source)
     if match is None:
-        raise ParseError
+        raise ParseError("Failed to detect course hash")
     return match.group(1)
