@@ -22,7 +22,9 @@ class TestDataExtractionBMSTable(unittest.TestCase):
                           "<a href='http://manbow.nothing.sh/event/event.cgi"
                           "?action=More_def&num=15&event=50'>MAXBEAT</a>",
                           "<a href='http://airlab.web.fc2.com/'>air</a>",
-                          ""))
+                          "",
+                          "http://www.dream-pro.info/~lavalse/cgi-bin/scoreview.cgi"
+                          "?hash=78e7a4107265c42ef329c2c4f0eedd76"))
 
 
 if __name__ == '__main__':

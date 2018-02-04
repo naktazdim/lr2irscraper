@@ -57,14 +57,14 @@ def make_dataframe_from_mname(mname: List[List],
         df["bmsid"] = df["ir3"].apply(lambda s: re.match(".*bmsid=(\d+).*", s).group(1))
 
         # ランキングページの URL そのものはいらないので抜いてしまう
-        df = df.drop(columns=["ir", "ir3"])
+        df = df.drop(columns="ir3")
 
         # データ上はレベル表記は「赤文字で ★+数字」 だが、一般的な「★★+数字」表記に直す
         # 「赤文字で」の部分は上で抜いてある
         df["level"] = df["level"].apply(lambda s: "★" + s)
 
         # 「基本構成」と同じ順に戻しておく
-        df = df[["level", "title", "bmsid", "original_artist", "sabun", "comment"]]
+        df = df[["level", "title", "bmsid", "original_artist", "sabun", "comment", "ir"]]
 
     return df
 
@@ -155,14 +155,4 @@ def _strip_tags(source: str) -> str:
     Returns: タグを抜いたテキスト
 
     """
-    class TagStripper(HTMLParser):
-        def __init__(self):
-            HTMLParser.__init__(self)
-            self.text = ""
-
-        def handle_data(self, data):
-            self.text += data
-
-    tag_stripper = TagStripper()
-    tag_stripper.feed(source)
-    return tag_stripper.text
+    return re.sub(r"<.*?>", "", source)
