@@ -17,7 +17,3 @@ class UnregisteredError(Exception):
 
     def __str__(self):
         return "{}: unregistered {}".format(self.id_or_hash, self.kind)
-
-
-class InconsistentDataError(Exception):
-    pass

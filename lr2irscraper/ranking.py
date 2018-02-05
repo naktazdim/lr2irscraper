@@ -4,7 +4,7 @@ from time import sleep
 from lr2irscraper.helper.fetch import *
 from lr2irscraper.helper.data_extraction.ranking import *
 from lr2irscraper.helper.validation import *
-from lr2irscraper.helper.exceptions import InconsistentDataError, UnregisteredError
+from lr2irscraper.helper.exceptions import UnregisteredError
 
 
 def get_ranking_data(hash_value: str) -> pd.DataFrame:
@@ -28,7 +28,7 @@ def get_ranking_data_detail(id_or_hash: Union[int, str], mode: str, interval: fl
     """ 詳細なランキングデータを取得する。bmsid (courseid) およびハッシュ値のいずれを渡してもよい。
 
     1 ページ (100 件) ずつランキングページを読み取ってデータを取得する。
-    get_ranking_data() より多くの情報が得られるが、低速。取得中にランキングが更新されてしまい失敗することがある。
+    get_ranking_data() より多くの情報が得られるが、低速。取得中にランキングが更新されてしまい、データに抜け・重複が生じることがある。
     ハッシュ値がわかっていて get_ranking_data() のデータで事足りる場合は極力そちらを使用すること。
 
     Args:
@@ -55,28 +55,17 @@ def get_ranking_data_detail(id_or_hash: Union[int, str], mode: str, interval: fl
     if chart_unregistered(source):
         raise UnregisteredError(id_or_hash, mode)
 
-    player_count = read_player_count_from_html(source)  # プレイヤ数を取得 (ランキング更新の判定に使う)
+    player_count = read_player_count_from_html(source)  # プレイヤ数を取得
     page_count = (player_count + 99) // 100  # プレイヤ数を 100 で割って切り上げるとページ数
 
     data_frames = [extract_ranking_from_html(source)]  # 以下でここに各ページを DataFrame に変換したものを格納
-    player_ids = set(data_frames[0]["id"])  # プレイヤ ID の集合 (ランキング更新の判定に使う)
 
     # 2 ページ目以降を順に取得
     for page in range(2, page_count + 1):
         sleep(interval)
 
         source = fetch_ranking_html(id_or_hash, mode, page)
-
-        if read_player_count_from_html(source) != player_count:  # もしプレイヤ数が変化していたら
-            raise InconsistentDataError  # 途中でランキングが更新されてしまっているので終了
-
         data_frames.append(extract_ranking_from_html(source))
-
-        index = set(data_frames[-1]["id"])  # このページのプレイヤ ID の集合
-        if player_ids & index:  # に、もし今までに見たプレイヤ ID と 1 つでも重複があれば
-            raise InconsistentDataError  # 途中でランキングが更新されてしまっているので終了
-
-        player_ids |= index  # プレイヤ ID の集合を更新
 
     return pd.concat(data_frames)  # 全ページのデータを結合して返す
 
