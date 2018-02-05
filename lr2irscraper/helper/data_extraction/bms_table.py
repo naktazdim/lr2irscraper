@@ -106,13 +106,13 @@ def postprocess(mname: pd.DataFrame, bms_table_url: str):
     if "achusi.main.jp/overjoy" in bms_table_url:
         mname = overjoy(mname)
 
-    # title と bmsid がともに空の行はダミーデータとみなして除去
+    # title と lr2_bmsid がともに空の行はダミーデータとみなして除去
     # (片方だけ抜けていることはしばしばある)
-    mname = mname[~((mname[["title", "bmsid"]] == "").all(axis=1))]
+    mname = mname[~((mname[["title", "lr2_bmsid"]] == "").all(axis=1))]
 
     # 並べ替え
-    # level, title, bmsid, artist, url, name_diff, url_diff, comment, その他 の順
-    column_order_base = ["level", "title", "bmsid", "artist", "url", "name_diff", "url_diff", "comment"]
+    # level, title, lr2_bmsid, artist, url, name_diff, url_diff, comment, その他 の順
+    column_order_base = ["level", "title", "lr2_bmsid", "artist", "url", "name_diff", "url_diff", "comment"]
     column_order = (
         [column for column in column_order_base if column in mname.columns]
         + [column for column in mname.columns if column not in column_order_base]
@@ -132,15 +132,15 @@ def column_name(url: str) -> List[str]:
 
     """
     # 気合
-    default_columns = ["id", "level", "title", "bmsid", "artist", "diff", "comment"]
-    a = ["id", "level", "title", "bmsid", "diff", "artist", "comment"]
-    b = ["id", "level", "title", "bmsid",  "comment", "artist", "diff", "unused"]
+    default_columns = ["id", "level", "title", "lr2_bmsid", "artist", "diff", "comment"]
+    a = ["id", "level", "title", "lr2_bmsid", "diff", "artist", "comment"]
+    b = ["id", "level", "title", "lr2_bmsid",  "comment", "artist", "diff", "unused"]
     c = ["id", "level", "title", "ir", "ir3", "artist", "diff", "comment"]
-    d = ["id", "level", "title", "bmsid", "rate", "unused", "comment"]
-    e = ["id", "level", "title", "bmsid", "artist", "diff", "comment", "speed", "gauge"]
-    f = ["id", "level", "title", "bmsid", "comment", "artist", "diff"]
-    g = ["id", "level", "title", "bmsid", "unused", "diff", "artist", "comment", "unused"]
-    h = ["id", "level", "title", "bmsid", "artist", "diff", "original_level", "comment"]
+    d = ["id", "level", "title", "lr2_bmsid", "rate", "unused", "comment"]
+    e = ["id", "level", "title", "lr2_bmsid", "artist", "diff", "comment", "speed", "gauge"]
+    f = ["id", "level", "title", "lr2_bmsid", "comment", "artist", "diff"]
+    g = ["id", "level", "title", "lr2_bmsid", "unused", "diff", "artist", "comment", "unused"]
+    h = ["id", "level", "title", "lr2_bmsid", "artist", "diff", "original_level", "comment"]
     tables = [
         (a, "10tan.web.fc2.com"),
         (a, "bmsinsane2.web.fc2.com"),
@@ -252,7 +252,7 @@ def overjoy(bms_table: pd.DataFrame):
 
     # Overjoy 表は bmsid カラムがなく、代わりに ir3 カラムにランキングページの URL が格納されている
     # そこから bmsid を抽出し、bmsid カラムを作って格納する
-    bms_table["bmsid"] = bms_table["ir3"].apply(lambda s: re.match(".*bmsid=(\d+).*", s).group(1))
+    bms_table["lr2_bmsid"] = bms_table["ir3"].apply(lambda s: re.match(".*bmsid=(\d+).*", s).group(1))
 
     # ir3 カラムは要らないので抜いてしまう。
     # ir カラムには古いランキングページ？へのリンクが入っているが、これも要らないので抜いてしまう
