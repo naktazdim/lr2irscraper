@@ -5,6 +5,7 @@ http://bmsnormal2.syuriken.jp/bms_dtmanager.html
 """
 import json
 from typing import Union
+from collections import OrderedDict
 
 from html.parser import HTMLParser
 import pandas as pd
@@ -66,8 +67,8 @@ def make_dataframe_from_header_and_data_json(header_json: str, data_json: str) -
     Returns:
 
     """
-    header = json.loads(header_json)
-    data = json.loads(data_json)
+    header = json.loads(header_json, object_pairs_hook=OrderedDict)
+    data = json.loads(data_json, object_pairs_hook=OrderedDict)
 
     if len(data) == 0:
         # 空の場合も、仕様上の必須カラムは用意しておく。"level" カラムは存在しないと以下の処理で困る
