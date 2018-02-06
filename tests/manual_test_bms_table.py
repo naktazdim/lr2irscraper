@@ -45,6 +45,7 @@ def main():
     tpe = ThreadPoolExecutor(max_workers=100)
     bms_table_table = pd.read_csv(resource_path("bms_tables.csv"))
 
+    print("test get_bms_table() for {} tables ...".format(len(bms_table_table)))
     results = list(tpe.map(try_get_bms_table,
                            [(name, url, args.output_directory)
                             for _, (name, url) in bms_table_table.iterrows()]))
