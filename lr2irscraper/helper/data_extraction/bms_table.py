@@ -118,6 +118,11 @@ def postprocess(mname: pd.DataFrame, bms_table_url: str):
         + [column for column in mname.columns if column not in column_order_base]
     )
 
+    # \r が入った項目があると .to_csv() で問題が生じる (クォートされない) ので、\r は除去する
+    # 具体的には発狂難易度表の ★4 Lieselotte [INSANE] で comment に \r が単体で入っていることへの対策
+    # \n であればクォートしてくれて read_csv() では読み込めるようだが、面倒なので一緒に削ってしまう
+    mname = mname.applymap(lambda s: re.sub(r"[\r\n]", " ", s) if isinstance(s, str) else s)
+
     return mname[column_order]
 
 
