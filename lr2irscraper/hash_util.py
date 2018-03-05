@@ -2,11 +2,30 @@
 """
 bmsid/courseid とハッシュ値との相互変換
 """
+from typing import Tuple
 
 from lr2irscraper.helper.fetch import *
 from lr2irscraper.helper.data_extraction.ranking import *
 from lr2irscraper.helper.validation import *
 from lr2irscraper.helper.exceptions import UnregisteredError
+
+
+def hash_to_id(hash_value: str) -> Tuple[str, int]:
+    """
+    BMS またはコースのハッシュ値から bmsid または courseid を得る。
+    たとえば hash_to_id("f8dcdfe070630bbb365323c662561a1a") とすれば ("bms", 15) のようなタプルが返る。
+
+    Args:
+        hash_value: BMS またはコースのハッシュ値
+
+    Returns: type, id　(type は "bms" または "course", id は bmsid または courseid)
+
+    """
+    validate_hash(hash_value)
+    if len(hash_value) == 32:
+        return "bms", hash_to_bmsid(hash_value)
+    elif len(hash_value) == 160:
+        return "course", hash_to_courseid(hash_value)
 
 
 def hash_to_bmsid(hash_value: str) -> int:
