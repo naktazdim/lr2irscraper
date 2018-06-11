@@ -78,10 +78,11 @@ def make_dataframe_from_header_and_data_json(header_json: str, data_json: str) -
 
     tag = header.get("tag") or header["symbol"]
     level_order = header.get("level_order") or table["level"].drop_duplicates().values
-    level_order = list(map(str, level_order))
+    level_order = list(map(str, level_order))  # 仕様では Array(String | Integer) となっている。str に統一しておく。
 
     return (
         table
+        .astype({"level": str})  # 仕様では str なのだが、int が入っていることがある (例: 新 Overjoy) ので str に統一しておく
         .astype({"level": CategoricalDtype(categories=level_order, ordered=True)})
         .assign(level=lambda df: df["level"].cat.rename_categories([tag + level for level in level_order]))
     )
