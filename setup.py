@@ -3,11 +3,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='lr2irscraper',
-    version='0.2',
+    version='1.0',
     description='LR2 Internet Ranking Scraper Library',
     author='nakt',
     author_email='nakt_azdim@walkure.net',
-    install_requires=['pandas>=0.21', 'pyjsparser'],
+    install_requires=['pandas>=0.21', 'requests', 'pyjsparser'],
     python_requires='>=3.5',
     packages=find_packages(exclude=('tests', 'docs')),
     test_suite='tests'
