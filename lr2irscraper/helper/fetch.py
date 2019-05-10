@@ -34,7 +34,8 @@ def fetch_ranking_xml(hash_value: str) -> str:
 
     """
     return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
-                  "/2/getrankingxml.cgi?id=1&songmd5={}".format(hash_value))
+                  "/2/getrankingxml.cgi?id=1&songmd5={}".format(hash_value),
+                 encoding="cp932")
 
 
 def fetch_ranking_html(id_or_hash: Union[int, str], mode: str, page: int) -> str:
@@ -54,7 +55,8 @@ def fetch_ranking_html(id_or_hash: Union[int, str], mode: str, page: int) -> str
         key_value = "bmsmd5={}".format(id_or_hash)
 
     return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
-                 "/search.cgi?mode=ranking&{}&page={}".format(key_value, page))
+                 "/search.cgi?mode=ranking&{}&page={}".format(key_value, page),
+                 encoding="cp932")
 
 
 def fetch_course_file(courseid: int) -> str:
@@ -67,4 +69,5 @@ def fetch_course_file(courseid: int) -> str:
 
     """
     return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
-                  "/search.cgi?mode=downloadcourse&courseid={}".format(courseid))
+                  "/search.cgi?mode=downloadcourse&courseid={}".format(courseid),
+                 encoding="cp932")
