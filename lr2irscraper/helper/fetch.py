@@ -30,16 +30,6 @@ def fetch(url: str) -> bytes:
         return open(urlparse_result.path, "rb").read()
 
 
-def fetch_ranking_xml(bmsmd5: BmsMd5) -> str:
-    """ハッシュを指定して、getrankingxml.cgi からランキングデータの xml データを取得する。
-
-    :param bmsmd5: bmsmd5
-    :return: 生の xml
-    """
-    return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
-                 "/2/getrankingxml.cgi?id=1&songmd5={}".format(bmsmd5)).decode("cp932")
-
-
 def fetch_ranking_html(bmsmd5: BmsMd5, page: int) -> str:
     """ID を指定して、search.cgi からランキングページの html データを 1 ページ取得する。
 

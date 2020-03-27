@@ -1,50 +1,13 @@
 """
-LR2IR の search.cgi や getrankingxml.cgi などの出力からデータを読み取る。
+LR2IR の search.cgi の出力からデータを読み取る。
 すべての入出力は unicode 文字列を想定している。
 (サーバからの生の出力は Shift-JIS なので注意。fetch.py を使って得たデータはすべて unicode 文字列に変換されている)
 """
 
 import re
-import xml.etree.ElementTree
-
-import pandas as pd
-
 
 from lr2irscraper.helper.exceptions import ParseError
 from lr2irscraper.types import BmsMd5, Lr2Id
-
-
-def extract_ranking_from_xml(source: str) -> pd.DataFrame:
-    """getrankingxml.cgi から取得したデータからランキングデータを抽出する。
-
-    :param source: ソース (UTF-8 を想定)
-    :return: ランキングデータ
-             (id, name, clear, notes, combo, pg, gr, minbp)
-             clear は 1-5 の数値で、FAILED, EASY, CLEAR, HARD, FULLCOMBO に対応する。
-             ★FULLCOMBO の情報は取得できない (FULLCOMBO と同じく 5 になる)。
-    """
-    columns = ["id", "name", "clear", "notes", "combo", "pg", "gr", "minbp"]
-    # うち、整数値のもの
-    ints = ["id", "clear", "notes", "combo", "pg", "gr", "minbp"]
-
-    match = re.search(r'(<ranking>.*?</ranking>)', source, re.DOTALL)  # <ranking> タグの中身のみを対象とする
-    if match is None:
-        raise ParseError
-    source = match.group(0)
-
-    # パースして dict を生成
-    try:
-        records = [
-            [child.find(key).text for key in columns]
-            for child in xml.etree.ElementTree.fromstring(source)
-        ]
-    except xml.etree.ElementTree.ParseError:
-        raise ParseError
-
-    return (
-        pd.DataFrame(records, columns=columns)
-          .astype({column: int for column in ints})
-    )
 
 
 def chart_unregistered(source: str) -> bool:
