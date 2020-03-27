@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import Optional
 import re
 
-from lr2irscraper.helper.fetch import fetch
-from lr2irscraper.types import BmsMd5
+from lr2irscraper.fetch import fetch
+from lr2irscraper.bmsmd5 import BmsMd5
 
 
 @dataclass()

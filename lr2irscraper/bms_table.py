@@ -8,7 +8,7 @@ import lxml.html
 import pandas as pd
 from pandas import CategoricalDtype
 
-from lr2irscraper.helper.fetch import fetch
+from lr2irscraper.fetch import fetch
 
 
 def _fetch_bmstable_json(url: str) -> Dict[str, Any]:
