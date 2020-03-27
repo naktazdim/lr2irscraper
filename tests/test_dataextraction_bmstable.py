@@ -1,6 +1,6 @@
 import unittest
 
-from lr2irscraper.helper.data_extraction.bms_table_new_style import *
+from lr2irscraper.helper.data_extraction.bms_table import *
 from tests.util import resource
 
 

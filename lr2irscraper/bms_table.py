@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 
 from lr2irscraper.helper.exceptions import ParseError
 from lr2irscraper.helper.fetch import fetch
-from lr2irscraper.helper.data_extraction.bms_table_new_style import *
+from lr2irscraper.helper.data_extraction.bms_table import *
 
 
 def get_bms_table(url: str) -> pd.DataFrame:
