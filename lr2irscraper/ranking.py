@@ -59,7 +59,8 @@ class Ranking:
         これはwell-formedなXMLではない (1行目の先頭に # がある、ルート要素が <ranking> と <lastupdate> の2つある)。
         なので、XMLパーサは使わずに単に正規表現でデータを抜き出してしまうほうが楽 (だし速度も速い)。
         """
-        columns = ["name", "playerid", "clear", "notes", "combo", "pg", "gr", "minbp"]
+        columns = ["name", "id", "clear", "notes", "combo", "pg", "gr", "minbp"]
+        int_columns = ["id", "clear", "notes", "combo", "pg", "gr", "minbp"]
         match = re.findall(r"<.*?>(.*?)</.*?>", self.source)[:-1]  # タグの中身をlistで抽出。[:-1]は<lastupdate>の分を抜いている
         data = [match[i:i + len(columns)] for i in range(0, len(match), len(columns))]  # len(columns) 個ずつ区切る
-        return pd.DataFrame(data, columns=columns)
+        return pd.DataFrame(data, columns=columns).astype({int_column: int for int_column in int_columns})
