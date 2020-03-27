@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 from dataclasses import dataclass
 from urllib.parse import urljoin
 from io import BytesIO
@@ -8,7 +8,12 @@ import lxml.html
 import pandas as pd
 from pandas import CategoricalDtype
 
-from lr2irscraper.helper.fetch import fetch, fetch_bmstable_json
+from lr2irscraper.helper.fetch import fetch
+
+
+def _fetch_bmstable_json(url: str) -> Dict[str, Any]:
+    # 仕様で UTF-8 と決まっている。"utf-8" だと BOM あり UTF-8 が読めない。 utf-8-sig は BOM ありもなしもどちらも読める
+    return json.loads(fetch(url).decode("utf-8-sig"))
 
 
 @dataclass()
@@ -29,9 +34,9 @@ class BmsTable(object):
         tree = lxml.html.parse(BytesIO(html))
 
         header_json_path = urljoin(url, tree.xpath("/html/head/meta[@name='bmstable']/@content")[0])
-        header = fetch_bmstable_json(header_json_path)
+        header = _fetch_bmstable_json(header_json_path)
         data_json_path = urljoin(header_json_path, header["data_url"])
-        data = fetch_bmstable_json(data_json_path)
+        data = _fetch_bmstable_json(data_json_path)
         return BmsTable(header, data)
 
     def to_dict(self) -> dict:

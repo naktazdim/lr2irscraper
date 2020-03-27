@@ -2,10 +2,8 @@
 LR2IR の search.cgi や getrankingxml.cgi などの生出力を取得する。
 ただし、元の Shift JIS ではなく unicode 文字列を返す。
 """
-from typing import Dict, Any
 import requests
 from urllib.parse import urlparse
-import json
 
 from lr2irscraper.types import BmsMd5, Lr2Id
 
@@ -50,12 +48,3 @@ def fetch_course_file(courseid: Lr2Id) -> str:
     return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
                  "/search.cgi?mode=downloadcourse&courseid={}".format(courseid.id)).decode("cp932")
 
-
-def fetch_bmstable_json(url: str) -> Dict[str, Any]:
-    """次期難易度表フォーマットのJSONファイル (headerまたはdata) を取得し、dictにして返す。
-
-    :param url: URL
-    :return: dict
-    """
-    # 仕様で UTF-8 と決まっている。"utf-8" だと BOM あり UTF-8 が読めない。 utf-8-sig は BOM ありもなしもどちらも読める
-    return json.loads(fetch(url).decode("utf-8-sig"))
