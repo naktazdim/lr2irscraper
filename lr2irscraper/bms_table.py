@@ -1,42 +1,74 @@
-# -*- coding: utf-8 -*-
-"""
-難易度表データの取得
-"""
-import pandas as pd
+from typing import Dict, Any
+from dataclasses import dataclass
 from urllib.parse import urljoin
+from io import BytesIO
+import json
 
-from lr2irscraper.helper.exceptions import ParseError
-from lr2irscraper.helper.fetch import fetch
-from lr2irscraper.helper.data_extraction.bms_table import *
-from lr2irscraper.helper.data_extraction.bms_table_new_style import *
+import lxml.html
+import pandas as pd
+from pandas import CategoricalDtype
+
+from lr2irscraper.fetch import fetch
 
 
-def get_bms_table(url: str) -> pd.DataFrame:
-    """ 指定した URL から難易度表データを取得し、DataFrame として返す。
+def _fetch_bmstable_json(url: str) -> Dict[str, Any]:
+    # 仕様で UTF-8 と決まっている。"utf-8" だと BOM あり UTF-8 が読めない。 utf-8-sig は BOM ありもなしもどちらも読める
+    return json.loads(fetch(url).decode("utf-8-sig"))
 
-    新形式か旧形式かは自動で判定する。
-    旧形式の表に関しては、発狂難易度表・Overjoy 表以外での動作は保証しない (多くはうまくいくようだが)。
 
-    Args:
-        url: URL
+@dataclass()
+class BmsTable(object):
+    header: dict
+    data: dict
 
-    Returns: 難易度表データ
-             カラムは表によって異なるが、
-             旧形式の場合は (id, level, title, bmsid) のカラムはほぼ常に存在する。
-             新形式の場合は (md5, level) のカラムは必ず存在する (仕様)。
+    @classmethod
+    def from_source(cls, header_source: str, data_source: str) -> "BmsTable":
+        return BmsTable(
+            json.load(open(header_source)),
+            json.load(open(data_source)) if data_source else None
+        )
 
-    """
-    source = fetch(url)
-    header_path = extract_header_path(source)  # まず新形式として「ヘッダ部」のパスの取得を試みる
+    @classmethod
+    def from_url(cls, url: str) -> "BmsTable":
+        html = fetch(url)
+        tree = lxml.html.parse(BytesIO(html))
 
-    if header_path is None:  # なければ旧形式とみなして解釈
-        mname = extract_mname(source)
-        if mname is None:  # 旧形式としても解釈できなければ例外を送出して終了
-            raise ParseError("Failed to detect bms table: {}".format(url))
-        return postprocess(mname, url)
-    else:  # 「ヘッダ部」のパスが取得できれば新形式とみなして解釈
-        header_path = urljoin(url, header_path)  # 絶対パスに変換 (header_path がもともと絶対パスのときも正しく動作する)
-        header_json = fetch(header_path)
-        data_path = urljoin(url, extract_data_path(header_json))
-        data_json = fetch(data_path)
-        return make_dataframe_from_header_and_data_json(header_json, data_json)
+        header_json_path = urljoin(url, tree.xpath("/html/head/meta[@name='bmstable']/@content")[0])
+        header = _fetch_bmstable_json(header_json_path)
+        data_json_path = urljoin(header_json_path, header["data_url"])
+        data = _fetch_bmstable_json(data_json_path)
+        return BmsTable(header, data)
+
+    def to_dict(self) -> dict:
+        return {
+            "header": self.header,
+            "data": self.data
+        }
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """次期難易度表フォーマットのデータを DataFrame として返す。
+
+        "level" カラムは Categorical, 他のカラムはすべて文字列 (object 型) とする。
+        表記レベルの先頭にはシンボルを付加する (たとえば "▼0")。
+        欠損値は空文字列とする。
+
+        :return: DataFrame
+        """
+        assert self.data is not None
+
+        if len(self.data) == 0:
+            # 空の場合も、仕様上の必須カラムは用意しておく。"level" カラムは存在しないと以下の処理で困る
+            table = pd.DataFrame(columns=["md5", "level"], dtype=object)
+        else:
+            table = pd.DataFrame.from_dict(self.data, dtype=object).fillna("")
+
+        tag = self.header.get("tag") or self.header["symbol"]
+        level_order = self.header.get("level_order") or table["level"].drop_duplicates().values
+        level_order = list(map(str, level_order))  # 仕様では Array(String | Integer) となっている。str に統一しておく。
+
+        return (
+            table
+                .astype({"level": str})  # 仕様では str なのだが、int が入っていることがある (例: 新 Overjoy) ので str に統一しておく
+                .astype({"level": CategoricalDtype(categories=level_order, ordered=True)})
+                .assign(level=lambda df: df["level"].cat.rename_categories([tag + level for level in level_order]))
+        )

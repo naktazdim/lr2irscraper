@@ -1,0 +1,184 @@
+﻿<html lang="ja">
+  <head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# article: http://ogp.me/ns/article#">
+    <title>LR2 発狂BMS Overjoy難易度表</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="bmstable" content="./data/header.json" />
+    
+    <meta property="og:title" content="発狂BMS Overjoy難易度表" />
+    <meta property="og:type" content="artcle" />
+    <meta property="og:url" content="./" />
+    <meta property="og:site_name" content="Overjoy" />
+    <meta property="og:description" content="見切れない譜面がきっと見つかる!!超発狂BMSの世界へようこそ!!" />
+    <link href="style.css" rel="stylesheet" type="text/css" media="screen,print" />
+    <link rel="shortcut icon" href="../define/icon.ico" type="image/vnd.microsoft.icon" />
+    <script src="jquery-2.0.2.min.js"></script>
+  </head>
+  <body>
+    <h1>LR2 発狂BMS Overjoy難易度表</h1>
+    <div class="info">
+      <div class="centertext">
+        <h3>お知らせ(2018/04/20)</h3>
+        <ul>
+          <li>Overjoy難易度表独自の<a href='http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&courseid=11126'>段位認定 Gorilla</a>を公開しました。LR2コースファイルのダウンロードは<a href='http://www.lr2.sakura.ne.jp/overjoy_course_gorilla.zip'>こちら</a></li>
+          <li>ジオシティーズ終了予定に伴い、sakuraサーバーに移転しました。(2019/03/26)</li>
+        </ul>
+        2018年4月11日、管理人移行に伴い一部難易度の変更やDLリンクの大量修正を実施しました。<br />
+        細かい変更点は<TD><A href="#★★8"><font color='blue'>こちら</font></A></TD>から確認できます。<br />
+        新規提案やルールの確認、その他告知には、掲示板ではなくDiscordというチャットツールを利用いたします。<br />
+        参加希望の方は下記のURLへお願いします。Discord入場には段位や腕前は不問で、どなたでも入ることができます。<br />
+        <a href='https://discord.gg/4UutZmZ'>Overjoy難易度表 Discord</a><br />
+        <br />  ※<span class="overjoy">★★1</span>＝★21がOverjoy難易度表の基準となっています。
+      </div>
+    </div>
+    <!--          ここから難易度表本体          -->
+    <table id="linklist">
+    </table>
+    <table id="bmslist">
+    </table>
+    <script language="javascript" type="text/javascript">
+      $(document).ready(function(){
+        $.getJSON($("meta[name=bmstable]").attr("content"), function(header){
+          //var last_update = new Date(header.update*1000);
+          //$("#update").html(last_update.toLocaleString());
+          $.getJSON(header.data_url, function(information){
+            makeBMSTable(information,header.symbol,header.update);
+          });
+        });
+      });
+
+      function makeBMSTable(info, mark, update) {
+        var x = "-1";
+        var ev = "";
+        var count = 0;
+        var total = 0;
+        var lastadd = 0;
+        var obj = $("#bmslist");
+        var mark_time = 0;
+        // 表のクリア
+        obj.html("");
+        $("<thead><tr><th id='level'>LV</th><th id='ir'>IR</th><th id='title'>Music Title</th><th id='artist'>Music Data</th><th id='sabun'>差分</th><th id='comment'>comment</th><th id='misc'>備考</th></tr></thead>").appendTo(obj);
+        var obj_sep = null;
+        var anchors = $("<tr></tr>");
+        for (var i = 0; i < info.length; i++) {
+          // 難度ごとの区切り
+          if (x != info[i].level) {
+            // 前の区切りに譜面数を追加
+            if (obj_sep != null) {
+                obj_sep.html("<td colspan='7'>" + mark + x + " (" + count + "譜面)</td>");
+              $("<td><a href='#" + mark + x + "'>" + mark + x + "</a></td>").appendTo(anchors);
+            }
+            $("<tr class='separate'></tr>").appendTo(obj);
+            obj_sep = $("<tr class='header' id='" + mark + info[i].level + "'></tr>");
+            obj_sep.appendTo(obj);
+            total += count;
+            count = 0;
+            x = info[i].level;
+          }
+          // 本文
+          var str = $("<tr class='main' id='anchor" + (i+1) + "'></tr>");
+          //if ((update - info[i].update) <= mark_time) {
+            //str = $("<tr class='main new' id='anchor" + (i+1) + "'></tr>");
+            //lastadd += 1;
+          //}
+          // レベル表記
+          $("<td><span class='overjoy'>" + mark + x + "</span></td>").appendTo(str);
+          // IR
+          $("<td><a href='http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&bmsmd5=" + info[i].md5 + "' target='_blank'>IR</a></td>").appendTo(str);
+          // タイトル
+          $("<td>" + info[i].title + "</td>").appendTo(str);
+          // アーティスト
+          if (info[i].artist == "") {
+            $("<td><a href='" + info[i].url + "'>作者不明</a></td>").appendTo(str);
+          } else {
+            $("<td><a href='" + info[i].url + "'>" + info[i].artist + "</a></td>").appendTo(str);
+          }
+          // 差分
+          if(info[i].url_diff == "") {
+            $("<td>同梱</td>").appendTo(str);
+          } else {
+            if (info[i].subartist == "") {
+              $("<td><a href='" + info[i].url_diff + "'>作者不明</a></td>").appendTo(str);
+            } else {
+              $("<td><a href='" + info[i].url_diff + "'>" + info[i].subartist + "</a></td>").appendTo(str);
+            }
+          }
+          // コメント
+          $("<td>" + info[i].comment.replace("\n", "<br />") + "</td>").appendTo(str);
+          // 備考
+          $("<td>" + info[i].misc + "</td>").appendTo(str);
+          str.appendTo(obj);
+          count++;
+        }
+        // 最後の区切り処理
+        if (obj_sep != null) {
+            obj_sep.html("<td colspan='7'>" + mark + x + " (" + count + "譜面)</td>");
+          $("<td><a href='#" + mark + x + "'>" + mark + x + "</a></td>").appendTo(anchors);
+        }
+        //$("#total").html(total + count);
+        //$("#lastadd").html(lastadd);
+        $("#linklist").html(anchors);
+      }
+    </script>
+    
+    <div class="info">
+      <div class="centertext">
+        ・2018年4月15日での変更点<br />
+        <small>
+        新規提案・難易度変更等の要望受付は掲示板からDiscordへ変更。<br />
+        ★★鷺の削除、★★8の新設。<br />
+        特に定められていなかったため、基本的に難易度はBM基準とします。(特に皿曲でのブレがかなりあった為。)<br />
+        GENOSIDE難易度表とOverjoy難易度表で表記が違うもの(例:Cynic(THE another)★22、★★1)を発狂難易度表に合わせます。<br />
+        <br />
+        ・難易度昇格<br />
+        ★★1 → 2<br />
+        sensitive -IR-<br />
+        Cynic (THE another)<br />
+        theme of maia [29Another]<br />
+        Little "Sister" Bitch(AHYA)<br />
+        myste`re  -LAST BOSS-<br />
+        四十五年ノ雪桜 [EX]<br />
+        ★★2→3<br />
+        Alastor [full density]<br />
+        Ascension to Heaven [MANIAC]<br />
+        Fragmentation [≡]<br />
+        Imperishable Night 2006 for D+<br />
+        ピアノ協奏曲第１番"蠍火"（なんでも吸い込むピンク色のための）[宇宙]<br />
+        ★★3→4<br />
+        Arcanum Guardian [EX]<br />
+        ★★4→5<br />
+        ATEKS TRIALOGUE [INSANE]<br />
+        DISCHARGE RUSH [S_EX]<br />
+        ★★6 → 7<br />
+        ひつぎとふたご [7KEY/PHANTASM]<br />
+        ★★7 → 8<br />
+        Last Battle-T260G- [ORETIC-2]<br />
+        戦歌「オルグラリヤ」<br />
+        幽雅に咲かせ、墨染の桜[HYPER]<br />
+        ・難易度降格<br />
+        ★★2 → 1<br />
+        Cross Galaxy -Clover-<br />
+        ★★3 → 1<br />
+        Gun to Childhead<br />
+        ★★4 → 3<br />
+        %E3%83%96%E3%83%B3%E3%82%BF%E3%83%B3 ～Falling in 'B' mix～ (EXPERT)<br />
+        煉獄-Purgatorium- [ANOTHER]<br />
+        ・削除楽曲<br />
+        29mix(すべての難易度)<br />
+        ABE3氏制作楽曲<br />
+        本家コピー系楽曲(歪んだ樹、DAY DREAM、シュレーディンガーの猫)<br />
+        ・削除理由<br />
+        ABE3氏は本人の意向による削除となります。<br />
+        29mixおよび本家コピー曲は、作曲者への配慮と、再現度がかなり高いコピー楽曲に対する懸念が主な理由です。<br />
+        DIAVOLT Tubeのみ本人から存在が許されているので残してありますが、状況によっては今後除外する場合もあります。<br />
+        本家楽曲をまるごと再現したものや、MAD作品に近いような差分は、以降の新規提案で受け付けませんのでご了承下さい。<br />
+        ただし、アレンジ・リミックスと呼べる範囲の楽曲であれば提案を認めます。<br />
+        <br />
+        管理者:<a href='http://twitter.com/asahi33'>asahi33</a>
+        </small>
+      </div>
+    </div>
+  </body>
+</html>

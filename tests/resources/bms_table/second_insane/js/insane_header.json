@@ -40,5 +40,5 @@
 {"name":"GENOCIDE 次期overjoy案","constraint":["grade_mirror"],"trophy":[{"name":"silvermedal","missrate":5.0,"scorerate":70.0},{"name":"goldmedal", "missrate":2.5,"scorerate":85.0}],"style":"lightgreen","md5":["cfad3baadce9e02c45021963453d7c94","77d23be22b2370925c573d922276bce0","188a99f74ab71804f2e360dcf484545c","c46a81cb184f5a804c119930d6eba748"]}
 ]
 ],
-"name":"第2発狂難易度","data_url":"/js/insane_data.json"
+"name":"第2発狂難易度","tag":"▼","data_url":"insane_data.json"
 }

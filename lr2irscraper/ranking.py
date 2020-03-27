@@ -1,71 +1,66 @@
-# -*- coding: utf-8 -*-
-from time import sleep
+from dataclasses import dataclass
+import re
 
-from lr2irscraper.helper.fetch import *
-from lr2irscraper.helper.data_extraction.ranking import *
-from lr2irscraper.helper.validation import *
-from lr2irscraper.helper.exceptions import UnregisteredError
+import pandas as pd
+
+from lr2irscraper.bmsmd5 import BmsMd5
+from lr2irscraper.fetch import fetch
 
 
-def get_ranking_data(hash_value: str) -> pd.DataFrame:
-    """ ランキングデータを取得する。ハッシュ値を渡す必要がある。
-
-    Args:
-        hash_value: ハッシュ値 (bms の場合は 32 桁、コースの場合は 160 桁の 16 進数値)
-
-    Returns:
-        ランキングデータ
-        (id, name, clear, notes, combo, pg, gr, minbp)
-        clear は 1-5 の数値で、FAILED, EASY, CLEAR, HARD, FULLCOMBO に対応する。
-        ★FULLCOMBO の情報は取得できない (FULLCOMBO と同じく 5 になる)。
-
+@dataclass()
+class Ranking:
+    """LR2のランキングAPIの出力
+    http://www.dream-pro.info/~lavalse/LR2IR/2/getrankingxml.cgi?id=[playerid]&songmd5=[songmd5]
     """
-    validate_hash(hash_value)
-    return extract_ranking_from_xml(fetch_ranking_xml(hash_value))
+    source: str
 
+    @classmethod
+    def from_bmsmd5(cls, bmsmd5: BmsMd5) -> "Ranking":
+        """ bmsmd5を指定してランキングを取得する。
 
-def get_ranking_data_detail(id_or_hash: Union[int, str], mode: str, interval: float=1.0) -> pd.DataFrame:
-    """ 詳細なランキングデータを取得する。bmsid (courseid) およびハッシュ値のいずれを渡してもよい。
+        :param bmsmd5: bmsmd5
+        :return: Ranking
+        """
+        return Ranking(fetch("http://www.dream-pro.info/~lavalse/LR2IR"
+                       "/2/getrankingxml.cgi?id=1&songmd5={}".format(bmsmd5.hash))
+                       .decode("cp932"))
 
-    1 ページ (100 件) ずつランキングページを読み取ってデータを取得する。
-    get_ranking_data() より多くの情報が得られるが、低速。取得中にランキングが更新されてしまい、データに抜け・重複が生じることがある。
-    ハッシュ値がわかっていて get_ranking_data() のデータで事足りる場合は極力そちらを使用すること。
+    def to_dataframe(self) -> pd.DataFrame:
+        """ランキングをDataFrameの形で返す。
 
-    Args:
-        id_or_hash: bmsid, courseid またはハッシュ値
-        mode: "bmsid", "courseid", "hash" のいずれかを指定
-        interval: 1ページ取得するごとに interval 秒だけ間隔をあける (サーバに負荷をかけすぎないため)
+        :return: ランキングデータ
+                 (id, name, clear, notes, combo, pg, gr, minbp)
+                 clear は 1-5 の数値で、FAILED, EASY, CLEAR, HARD, FULLCOMBO に対応する。
+                 ★FULLCOMBO の情報は取得できない (FULLCOMBO と同じく 5 になる)。
+        """
 
-    Returns:
-        ランキングデータ
-        (id, rank, name, sp_dan, dp_dan, clear, dj_level, score, max_score, score_percentage,
-         combo, notes, minbp, pg, gr, gd, bd, pr, gauge_option, random_option, input, body, comment)
+        """
+        上記APIの出力は以下のような形式をしている。
 
-    """
-    if mode in ["bmsid", "courseid"]:
-        validate_id(id_or_hash)
-    elif mode == "hash":
-        validate_hash(id_or_hash)
-    else:
-        raise ValueError("{}: mode must be 'bmsid', 'courseid' or 'hash'".format(mode))
+        #<?xml version="1.0" encoding="shift_jis"?>
+        <ranking>
+            <score>
+                <name>nakt</name>
+                <id>35564</id>
+                <clear>4</clear>
+                <notes>1797</notes>
+                <combo>602</combo>
+                <pg>1003</pg>
+                <gr>680</gr>
+                <minbp>39</minbp>
+            </score>
+            ...
+            <score>
+                ...
+            </score>
+        </ranking>
+        <lastupdate></lastupdate>
 
-    # まず 1 ページ目を取得し、そこから諸々の情報を得る
-    source = fetch_ranking_html(id_or_hash, mode, 1)
-
-    if chart_unregistered(source):
-        raise UnregisteredError(id_or_hash, mode)
-
-    player_count = read_player_count_from_html(source)  # プレイヤ数を取得
-    page_count = (player_count + 99) // 100  # プレイヤ数を 100 で割って切り上げるとページ数
-
-    data_frames = [extract_ranking_from_html(source)]  # 以下でここに各ページを DataFrame に変換したものを格納
-
-    # 2 ページ目以降を順に取得
-    for page in range(2, page_count + 1):
-        sleep(interval)
-
-        source = fetch_ranking_html(id_or_hash, mode, page)
-        data_frames.append(extract_ranking_from_html(source))
-
-    return pd.concat(data_frames)  # 全ページのデータを結合して返す
-
+        これはwell-formedなXMLではない (1行目の先頭に # がある、ルート要素が <ranking> と <lastupdate> の2つある)。
+        なので、XMLパーサは使わずに単に正規表現でデータを抜き出してしまうほうが楽 (だし速度も速い)。
+        """
+        columns = ["name", "id", "clear", "notes", "combo", "pg", "gr", "minbp"]
+        int_columns = ["id", "clear", "notes", "combo", "pg", "gr", "minbp"]
+        match = re.findall(r"<.*?>(.*?)</.*?>", self.source)[:-1]  # タグの中身をlistで抽出。[:-1]は<lastupdate>の分を抜いている
+        data = [match[i:i + len(columns)] for i in range(0, len(match), len(columns))]  # len(columns) 個ずつ区切る
+        return pd.DataFrame(data, columns=columns).astype({int_column: int for int_column in int_columns})
