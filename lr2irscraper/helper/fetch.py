@@ -3,7 +3,6 @@ LR2IR の search.cgi や getrankingxml.cgi などの生出力を取得する。
 ただし、元の Shift JIS ではなく unicode 文字列を返す。
 """
 import requests
-from typing import Union
 _session = requests.Session()
 
 
@@ -31,21 +30,15 @@ def fetch_ranking_xml(hash_value: str) -> str:
                  encoding="cp932")
 
 
-def fetch_ranking_html(id_or_hash: Union[int, str], mode: str, page: int) -> str:
+def fetch_ranking_html(hash_value: str, page: int) -> str:
     """ID を指定して、search.cgi からランキングページの html データを 1 ページ取得する。
 
-    :param id_or_hash: bmsid, courseid, ハッシュ値のいずれかを指定
-    :param mode: "bmsid", "courseid", "hash" のいずれかを指定
+    :param hash_value: ハッシュ値
     :param page: ページ番号
     :return: 生の html (1 ページ分)
     """
-    if mode in ["bmsid", "courseid"]:
-        key_value = "{}={}".format(mode, id_or_hash)
-    elif mode == "hash":
-        key_value = "bmsmd5={}".format(id_or_hash)
-
     return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
-                 "/search.cgi?mode=ranking&{}&page={}".format(key_value, page),
+                 "/search.cgi?mode=ranking&bmsmd5={}&page={}".format(hash_value, page),
                  encoding="cp932")
 
 
