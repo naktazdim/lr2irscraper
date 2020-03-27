@@ -1,8 +1,6 @@
-from time import sleep
-
 from lr2irscraper.helper.fetch import *
 from lr2irscraper.helper.data_extraction.ranking import *
-from lr2irscraper.helper.validation import *
+from lr2irscraper.types.bmsmd5 import BmsMd5
 
 
 def get_ranking_data(hash_value: str) -> pd.DataFrame:
@@ -14,5 +12,4 @@ def get_ranking_data(hash_value: str) -> pd.DataFrame:
              clear は 1-5 の数値で、FAILED, EASY, CLEAR, HARD, FULLCOMBO に対応する。
              ★FULLCOMBO の情報は取得できない (FULLCOMBO と同じく 5 になる)。
     """
-    validate_hash(hash_value)
-    return extract_ranking_from_xml(fetch_ranking_xml(hash_value))
+    return extract_ranking_from_xml(fetch_ranking_xml(BmsMd5(hash_value)))

@@ -11,6 +11,7 @@ import pandas as pd
 
 
 from lr2irscraper.helper.exceptions import ParseError
+from lr2irscraper.types import BmsMd5, Lr2Id
 
 
 def extract_ranking_from_xml(source: str) -> pd.DataFrame:
@@ -70,7 +71,7 @@ def read_player_count_from_html(source: str) -> int:
     return int(match.group(1))
 
 
-def read_bmsid_from_html(source: str) -> int:
+def read_bmsid_from_html(source: str) -> Lr2Id:
     """search.cgi?mode=ranking から取得した html (1 ページ分) から bmsid を抽出する。
 
     :param source: source: ソース (UTF-8 を想定)
@@ -79,10 +80,10 @@ def read_bmsid_from_html(source: str) -> int:
     match = re.search("<a href=\"search\.cgi\?mode=editlogList&bmsid=(\d+)\">", source)
     if match is None:
         raise ParseError("Failed to detect bmsid")
-    return int(match.group(1))
+    return Lr2Id("bms", int(match.group(1)))
 
 
-def read_courseid_from_html(source: str) -> int:
+def read_courseid_from_html(source: str) -> Lr2Id:
     """search.cgi?mode=ranking から取得した html (1 ページ分) から courseid を抽出する。
 
     :param source: ソース (UTF-8 を想定)
@@ -91,10 +92,10 @@ def read_courseid_from_html(source: str) -> int:
     match = re.search("<a href =\"search\.cgi\?mode=downloadcourse&courseid=(\d+)\">", source)
     if match is None:
         raise ParseError("Failed to detect courseid")
-    return int(match.group(1))
+    return Lr2Id("course", int(match.group(1)))
 
 
-def read_course_hash_from_course_file(source: str) -> str:
+def read_course_hash_from_course_file(source: str) -> BmsMd5:
     """search.cgi?mode=downloadcourse から取得したコースファイル (course.lr2crs) からコースのハッシュ値を抽出する。
 
     :param source: ソース (UTF-8 を想定)
@@ -103,4 +104,4 @@ def read_course_hash_from_course_file(source: str) -> str:
     match = re.search("<hash>([0-9a-f]{160})</hash>", source)
     if match is None:
         raise ParseError("Failed to detect course hash")
-    return match.group(1)
+    return BmsMd5(match.group(1))

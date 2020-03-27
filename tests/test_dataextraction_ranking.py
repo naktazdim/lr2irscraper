@@ -1,6 +1,7 @@
 import unittest
 
 from lr2irscraper.helper.data_extraction.ranking import *
+from lr2irscraper.types import BmsMd5, Lr2Id
 from tests.util import resource
 
 
@@ -36,7 +37,7 @@ class TestDataExtractionRanking(unittest.TestCase):
 
     def test_read_bmsid_from_html(self):
         files = ["test_middle.html", "test_less_than_100.html"]
-        bmsids = [15, 4]
+        bmsids = [Lr2Id("bms", 15), Lr2Id("bms", 4)]
 
         for file, bmsid in zip(files, bmsids):
             with self.subTest(file=file):
@@ -44,7 +45,7 @@ class TestDataExtractionRanking(unittest.TestCase):
 
     def test_read_courseid_from_html(self):
         files = ["test_course.html"]
-        bmsids = [4945]
+        bmsids = [Lr2Id("course", 4945)]
 
         for file, bmsid in zip(files, bmsids):
             with self.subTest(file=file):
@@ -52,11 +53,11 @@ class TestDataExtractionRanking(unittest.TestCase):
 
     def test_read_course_hash_from_course_file(self):
         files = ["course.lr2crs"]
-        course_hashes = ["00000000002000000000000000005190"
-                         "c07125de4ed7fbe7cb066cc41e50e51e"
-                         "fc7d46e7bbc9f6afd26d05e3bf2ef555"
-                         "b3887714270e28988ce900e4b9300994"
-                         "d1877ad5dc0134b27eb0238da5721eed"]
+        course_hashes = [BmsMd5("00000000002000000000000000005190"
+                                "c07125de4ed7fbe7cb066cc41e50e51e"
+                                "fc7d46e7bbc9f6afd26d05e3bf2ef555"
+                                "b3887714270e28988ce900e4b9300994"
+                                "d1877ad5dc0134b27eb0238da5721eed")]
 
         for file, course_hash in zip(files, course_hashes):
             with self.subTest(file=file):

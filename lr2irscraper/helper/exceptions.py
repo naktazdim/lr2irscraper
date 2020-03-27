@@ -1,5 +1,6 @@
 from typing import Union
 
+from lr2irscraper.types import BmsMd5, Lr2Id
 
 class ParseError(Exception):
     def __init__(self, message: str):
@@ -10,7 +11,7 @@ class ParseError(Exception):
 
 
 class UnregisteredError(Exception):
-    def __init__(self, id_or_hash: Union[int, str], kind: str):
+    def __init__(self, id_or_hash: Union[BmsMd5, Lr2Id], kind: str):
         self.id_or_hash = id_or_hash
         self.kind = kind
 
