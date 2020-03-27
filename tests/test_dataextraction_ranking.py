@@ -16,27 +16,6 @@ class TestDataExtractionRanking(unittest.TestCase):
                 self.assertEqual(df.shape, shape)
                 self.assertEqual(tuple(df[df["id"] == 35564].values[0]), value)
 
-    def test_extract_ranking_from_html(self):
-        df = extract_ranking_from_html(resource("test_middle.html"))
-        self.assertEqual(
-            tuple(df[df["id"] == 35564].values[0]),
-            (6645, 35564,  "nakt", "★04", "-", "HARD", "AAA", 3608, 4012, "89.93%",
-             1404, 2006, 10, 1628, 352, 20, 3, 9, "易", "乱", "BM", "LR2", ""))
-
-        files = ["test_head.html", "test_middle.html", "test_tail.html", "test_less_than_100.html", "test_course.html"]
-        sizes = [100, 100, 53, 25, 100]
-        for file, size in zip(files, sizes):
-            with self.subTest(file=file):
-                df = extract_ranking_from_html(resource(file))
-                self.assertEqual(df.shape, (size, 23))
-                self.assertTrue(df.notnull().values.all())
-
-    def test_extract_ranking_from_html_error(self):
-        files = ["test_out_of_bounds.html", "test_unregistered.html", "test_unregistered2.html"]
-        for file in files:
-            with self.subTest(file=file):
-                self.assertRaises(ParseError, extract_ranking_from_html, resource(file))
-
     def test_read_player_count_from_html(self):
         files = ["test_head.html", "test_middle.html", "test_tail.html", "test_less_than_100.html", "test_course.html"]
         player_counts = [22553, 22553, 22553, 25, 11370]

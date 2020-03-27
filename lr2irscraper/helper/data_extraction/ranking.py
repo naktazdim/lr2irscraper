@@ -8,7 +8,6 @@ import re
 import xml.etree.ElementTree
 
 import pandas as pd
-from pandas.api.types import CategoricalDtype
 
 
 from lr2irscraper.helper.exceptions import ParseError
@@ -47,84 +46,6 @@ def extract_ranking_from_xml(source: str) -> pd.DataFrame:
     return (
         pd.DataFrame(records, columns=columns)
           .astype({column: int for column in ints})
-    )
-
-
-def extract_ranking_from_html(source: str) -> pd.DataFrame:
-    """ search.cgi?mode=ranking から取得した html (1 ページ分) からランキングデータを抽出する。
-
-    Args:
-        source: ソース (UTF-8 を想定)
-
-    Returns: ランキングデータ
-
-    """
-    # ヘッダ行
-    header = ("  <tr><th>順位</th><th>プレイヤー</th><th>段位</th><th>クリア</th><th>ランク</th><th>スコア</th>"
-              "<th>コンボ</th><th>B+P</th><th>PG</th><th>GR</th><th>GD</th><th>BD</th><th>PR</th><th>OP</th>"
-              "<th>OP</th><th>INPUT</th><th>本体</th></tr>")
-    # データ行 (1 レコードあたり 2 行) の正規表現
-    data_regexp = re.compile(
-        "  <tr><td rowspan=\"2\" align=\"center\">(\d+?)</td>"
-        "<td><a href=\"search\.cgi\?mode=mypage&playerid=(\d+?)\">(.*?)</a></td><td>(.*?)/(.*?)</td>"
-        "<td>(.*?)</td><td>(.*?)</td><td>(\d+?)/(\d+?)\(([\d.]+?%)\)</td><td>(\d+?)/(\d+?)</td>"
-        "<td>(\d+?)</td><td>(\d+?)</td><td>(\d+?)</td><td>(\d+?)</td><td>(\d+?)</td><td>(\d+?)</td>"
-        "<td>(.*?)</td><td>(.*?)</td><td>(.*?)</td><td>(LR2)</td></tr>\n"
-        "  <tr><td colspan = \"16\" class=\"gray\">(.*?)</td></tr>")
-    # 上記の正規表現のグループ (括弧) がそれぞれ順に以下の値に対応する
-    columns = ["rank", "id", "name", "sp_dan", "dp_dan", "clear", "dj_level",
-               "score", "max_score", "score_percentage", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr",
-               "gauge_option", "random_option", "input", "body", "comment"]
-    # うち、整数値のものとカテゴリ変数のもの
-    ints = ["rank", "id", "score", "max_score", "combo", "notes", "minbp", "pg", "gr", "gd", "bd", "pr"]
-    categories = {
-        "sp_dan": CategoricalDtype(
-                categories=["-",
-                            "☆01", "☆02", "☆03", "☆04", "☆05", "☆06", "☆07", "☆08", "☆09", "☆10",
-                            "★01", "★02", "★03", "★04", "★05", "★06", "★07", "★08", "★09", "★10", "★★", "(^^)"],
-                ordered=True),
-        "dp_dan": CategoricalDtype(
-                categories=["-",
-                            "☆01", "☆02", "☆03", "☆04", "☆05", "☆06", "☆07", "☆08", "☆09", "☆10",
-                            "★01", "★02", "★03", "★04", "★05", "★06", "★07", "★08", "★09", "★10", "★★", "(^^)"],
-                ordered=True),
-        "clear": CategoricalDtype(
-                # 先頭の "" は内部コードを xml 側の数値とあわせるためのダミー
-                categories=["", "FAILED", "EASY", "CLEAR", "HARD", "FULLCOMBO", "★FULLCOMBO"],
-                ordered=True),
-        "dj_level": CategoricalDtype(
-                categories=["F", "E", "D", "C", "B", "A", "AA", "AAA"],
-                ordered=True),
-        "gauge_option": CategoricalDtype(
-                categories=["易", "普", "難", "死", "PA", "GA"],
-                ordered=False),  # "GA" があるので ordered とは言えない
-        "input": CategoricalDtype(
-                categories=["BM", "KB", "MIDI"],
-                ordered=False),
-        "body": CategoricalDtype(
-                categories=["LR2"],
-                ordered=False),
-    }
-
-    lines = source.split("\n")
-
-    try:
-        header_line_number = lines.index(header)  # ヘッダ行が何行目かを取得
-    except ValueError:  # もし見つからなければ
-        raise ParseError("Failed to detect ranking data")
-
-    # 気合いでパース
-    records = []
-    for i in range(header_line_number + 1, len(lines), 2):  # ヘッダ行の次の行から
-        match = data_regexp.match("\n".join(lines[i: i + 2]))  # 2 行ずつ読んで上記の正規表現を適用する
-        if match is None:  # マッチしなければ
-            break  # そこで終了
-        records.append(match.groups())
-    
-    return (
-        pd.DataFrame(records, columns=columns)
-          .astype({column: int for column in ints})
-          .astype({column: category for column, category in categories.items()})
     )
 
 
