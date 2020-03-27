@@ -4,7 +4,6 @@ import re
 
 from lr2irscraper.helper.fetch import fetch
 from lr2irscraper.types import BmsMd5
-from lr2irscraper.helper.exceptions import ParseError
 
 
 @dataclass()
@@ -30,7 +29,7 @@ class BmsInfo:
 
         title_match = re.search(r"<h1>(.*?)</h1>", source)
         if title_match is None:
-            ParseError("parse error: failed to detect title")
+            raise Exception("failed to detect title")
         title = title_match.group(1)
 
         bmsid_match = re.search(r"<a href=\"search\.cgi\?mode=editlogList&bmsid=(\d+)\">", source)
@@ -40,7 +39,7 @@ class BmsInfo:
         elif courseid_match:
             return BmsInfo("course", int(courseid_match.group(1)), title)
         else:
-            raise ParseError("failed to detect lr2 id")
+            raise Exception("failed to detect lr2 id")
 
     @classmethod
     def from_bmsmd5(cls, bmsmd5: BmsMd5) -> "Optional[BmsInfo]":
