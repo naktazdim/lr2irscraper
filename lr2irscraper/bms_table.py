@@ -1,9 +1,6 @@
 """
 難易度表データの取得
 """
-import pandas as pd
-from urllib.parse import urljoin
-
 from lr2irscraper.helper.exceptions import ParseError
 from lr2irscraper.helper.fetch import fetch
 from lr2irscraper.helper.data_extraction.bms_table import *

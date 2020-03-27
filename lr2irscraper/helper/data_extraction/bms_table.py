@@ -12,8 +12,6 @@ import pyjsparser
 from html.parser import HTMLParser
 from urllib.parse import urljoin
 
-from lr2irscraper.helper.exceptions import ParseError
-
 
 def extract_mname(source: str) -> Union[pd.DataFrame, None]:
     """
