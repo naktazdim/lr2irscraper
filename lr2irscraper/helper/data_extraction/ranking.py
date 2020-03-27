@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 LR2IR の search.cgi や getrankingxml.cgi などの出力からデータを読み取る。
 すべての入出力は unicode 文字列を想定している。

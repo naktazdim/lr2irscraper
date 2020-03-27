@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 bmsid/courseid とハッシュ値との相互変換
 """

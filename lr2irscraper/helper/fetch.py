@@ -2,7 +2,6 @@
 LR2IR の search.cgi や getrankingxml.cgi などの生出力を取得する。
 ただし、元の Shift JIS ではなく unicode 文字列を返す。
 """
-# -*- coding: utf-8 -*-
 import requests
 from typing import Union
 _session = requests.Session()

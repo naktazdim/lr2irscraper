@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 次期難易度表フォーマットのデータを読み取る。
 http://bmsnormal2.syuriken.jp/bms_dtmanager.html
