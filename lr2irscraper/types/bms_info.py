@@ -3,14 +3,19 @@ from typing import Optional
 import re
 
 from lr2irscraper.helper.fetch import fetch
-from lr2irscraper.types import BmsMd5, Lr2Id
+from lr2irscraper.types import BmsMd5
 from lr2irscraper.helper.exceptions import ParseError
 
 
 @dataclass()
 class BmsInfo:
-    lr2_id: Lr2Id
+    type: str
+    lr2_id: int
     title: str
+
+    def __post_init__(self):
+        assert self.type in ["bms", "course"]
+        assert self.lr2_id > 0
 
     @classmethod
     def from_source(cls, source: str) -> "Optional[BmsInfo]":
@@ -23,20 +28,19 @@ class BmsInfo:
         if "この曲は登録されていません。<br>" in source.splitlines():
             return None
 
-        bmsid_match = re.search(r"<a href=\"search\.cgi\?mode=editlogList&bmsid=(\d+)\">", source)
-        courseid_match = re.search(r"<a href =\"search\.cgi\?mode=downloadcourse&courseid=(\d+)\">", source)
-        if bmsid_match:
-            lr2_id = Lr2Id("bms", int(bmsid_match.group(1)))
-        elif courseid_match:
-            lr2_id = Lr2Id("course", int(courseid_match.group(1)))
-        else:
-            raise ParseError("failed to detect lr2 id")
-
         title_match = re.search(r"<h1>(.*?)</h1>", source)
         if title_match is None:
             ParseError("parse error: failed to detect title")
+        title = title_match.group(1)
 
-        return BmsInfo(lr2_id, title_match.group(1))
+        bmsid_match = re.search(r"<a href=\"search\.cgi\?mode=editlogList&bmsid=(\d+)\">", source)
+        courseid_match = re.search(r"<a href =\"search\.cgi\?mode=downloadcourse&courseid=(\d+)\">", source)
+        if bmsid_match:
+            return BmsInfo("bms", int(bmsid_match.group(1)), title)
+        elif courseid_match:
+            return BmsInfo("course", int(courseid_match.group(1)), title)
+        else:
+            raise ParseError("failed to detect lr2 id")
 
     @classmethod
     def from_bmsmd5(cls, bmsmd5: BmsMd5) -> "Optional[BmsInfo]":
