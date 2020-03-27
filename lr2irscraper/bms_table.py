@@ -9,12 +9,10 @@ from lr2irscraper.helper.data_extraction.bms_table import *
 
 
 def get_bms_table(url: str) -> pd.DataFrame:
-    """ 指定した URL から難易度表データを取得し、DataFrame として返す。
+    """指定した URL から難易度表データを取得し、DataFrame として返す。
 
-    Args:
-        url: URL
-
-    Returns: 難易度表データ
+    :param url: URL
+    :return: 難易度表データ
     """
     source = fetch(url)
     header_path = extract_header_path(source)

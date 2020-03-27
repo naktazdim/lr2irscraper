@@ -14,16 +14,13 @@ from lr2irscraper.helper.exceptions import ParseError
 
 
 def extract_ranking_from_xml(source: str) -> pd.DataFrame:
-    """ getrankingxml.cgi から取得したデータからランキングデータを抽出する。
+    """getrankingxml.cgi から取得したデータからランキングデータを抽出する。
 
-    Args:
-        source: ソース (UTF-8 を想定)
-
-    Returns: ランキングデータ
+    :param source: ソース (UTF-8 を想定)
+    :return: ランキングデータ
              (id, name, clear, notes, combo, pg, gr, minbp)
              clear は 1-5 の数値で、FAILED, EASY, CLEAR, HARD, FULLCOMBO に対応する。
              ★FULLCOMBO の情報は取得できない (FULLCOMBO と同じく 5 になる)。
-
     """
     columns = ["id", "name", "clear", "notes", "combo", "pg", "gr", "minbp"]
     # うち、整数値のもの
@@ -50,13 +47,10 @@ def extract_ranking_from_xml(source: str) -> pd.DataFrame:
 
 
 def chart_unregistered(source: str) -> bool:
-    """ search.cgi?mode=ranking から取得した html (1 ページ分) から、未登録の譜面のデータを取得しようとしたかを返す。
+    """search.cgi?mode=ranking から取得した html (1 ページ分) から、未登録の譜面のデータを取得しようとしたかを返す。
 
-    Args:
-        source: ソース (UTF-8 を想定)
-
-    Returns: ランキングデータ
-
+    :param source: ソース (UTF-8 を想定)
+    :return: ランキングデータ
     """
     return re.search("</div><!--end search--> \n"
                      "(エラーが発生しました。\n|未登録の曲です。)<br>\n"
@@ -65,13 +59,10 @@ def chart_unregistered(source: str) -> bool:
 
 
 def read_player_count_from_html(source: str) -> int:
-    """ search.cgi?mode=ranking から取得した html (1 ページ分) から総プレイ人数を抽出する。
+    """search.cgi?mode=ranking から取得した html (1 ページ分) から総プレイ人数を抽出する。
 
-    Args:
-        source: ソース (UTF-8 を想定)
-
-    Returns: プレイ人数
-
+    :param source: ソース (UTF-8 を想定)
+    :return: プレイ人数
     """
     match = re.search("  <tr><th>人数</th><td>(\d+)</td><td>\d+</td><td>[\d.]+%</td></tr>", source)
     if match is None:
@@ -80,13 +71,10 @@ def read_player_count_from_html(source: str) -> int:
 
 
 def read_bmsid_from_html(source: str) -> int:
-    """ search.cgi?mode=ranking から取得した html (1 ページ分) から bmsid を抽出する。
+    """search.cgi?mode=ranking から取得した html (1 ページ分) から bmsid を抽出する。
 
-    Args:
-        source: ソース (UTF-8 を想定)
-
-    Returns: bmsid
-
+    :param source: source: ソース (UTF-8 を想定)
+    :return: bmsid
     """
     match = re.search("<a href=\"search\.cgi\?mode=editlogList&bmsid=(\d+)\">", source)
     if match is None:
@@ -95,13 +83,10 @@ def read_bmsid_from_html(source: str) -> int:
 
 
 def read_courseid_from_html(source: str) -> int:
-    """ search.cgi?mode=ranking から取得した html (1 ページ分) から courseid を抽出する。
+    """search.cgi?mode=ranking から取得した html (1 ページ分) から courseid を抽出する。
 
-    Args:
-        source: ソース (UTF-8 を想定)
-
-    Returns: courseid
-
+    :param source: ソース (UTF-8 を想定)
+    :return: courseid
     """
     match = re.search("<a href =\"search\.cgi\?mode=downloadcourse&courseid=(\d+)\">", source)
     if match is None:
@@ -110,13 +95,10 @@ def read_courseid_from_html(source: str) -> int:
 
 
 def read_course_hash_from_course_file(source: str) -> str:
-    """ search.cgi?mode=downloadcourse から取得したコースファイル (course.lr2crs) からコースのハッシュ値を抽出する。
+    """search.cgi?mode=downloadcourse から取得したコースファイル (course.lr2crs) からコースのハッシュ値を抽出する。
 
-    Args:
-        source: ソース (UTF-8 を想定)
-
-    Returns: コースのハッシュ値
-
+    :param source: ソース (UTF-8 を想定)
+    :return: コースのハッシュ値
     """
     match = re.search("<hash>([0-9a-f]{160})</hash>", source)
     if match is None:

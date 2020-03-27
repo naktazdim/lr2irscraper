@@ -8,14 +8,11 @@ _session = requests.Session()
 
 
 def fetch(url: str, encoding: str = "auto") -> str:
-    """ 指定した URL からデータを得る。
+    """指定した URL からデータを得る。
 
-    Args:
-        url: URL
-        encoding: エンコーディング ("auto" の場合は自動判定)
-
-    Returns: データ
-
+    :param url: URL
+    :param encoding: エンコーディング ("auto" の場合は自動判定)
+    :return: データ
     """
     r = _session.get(url)
     r.raise_for_status()
@@ -24,13 +21,10 @@ def fetch(url: str, encoding: str = "auto") -> str:
 
 
 def fetch_ranking_xml(hash_value: str) -> str:
-    """ ハッシュを指定して、getrankingxml.cgi からランキングデータの xml データを取得する。
+    """ハッシュを指定して、getrankingxml.cgi からランキングデータの xml データを取得する。
 
-    Args:
-        hash_value: bms の場合は 32 桁、コースの場合は 160 桁の 16 進数値
-
-    Returns: 生の xml
-
+    :param hash_value: bms の場合は 32 桁、コースの場合は 160 桁の 16 進数値
+    :return: 生の xml
     """
     return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
                   "/2/getrankingxml.cgi?id=1&songmd5={}".format(hash_value),
@@ -38,15 +32,12 @@ def fetch_ranking_xml(hash_value: str) -> str:
 
 
 def fetch_ranking_html(id_or_hash: Union[int, str], mode: str, page: int) -> str:
-    """ ID を指定して、search.cgi からランキングページの html データを 1 ページ取得する。
+    """ID を指定して、search.cgi からランキングページの html データを 1 ページ取得する。
 
-    Args:
-        id_or_hash: bmsid, courseid, ハッシュ値のいずれかを指定
-        mode: "bmsid", "courseid", "hash" のいずれかを指定
-        page: ページ番号
-
-    Returns: 生の html (1 ページ分)
-
+    :param id_or_hash: bmsid, courseid, ハッシュ値のいずれかを指定
+    :param mode: "bmsid", "courseid", "hash" のいずれかを指定
+    :param page: ページ番号
+    :return: 生の html (1 ページ分)
     """
     if mode in ["bmsid", "courseid"]:
         key_value = "{}={}".format(mode, id_or_hash)
@@ -59,13 +50,10 @@ def fetch_ranking_html(id_or_hash: Union[int, str], mode: str, page: int) -> str
 
 
 def fetch_course_file(courseid: int) -> str:
-    """ courseid を指定して、コースファイルを取得する。
+    """courseid を指定して、コースファイルを取得する。
 
-    Args:
-        courseid: コースの ID
-
-    Returns: 「コースファイル」 (xml)
-
+    :param courseid: courseid: コースの ID
+    :return: 「コースファイル」 (xml)
     """
     return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
                   "/search.cgi?mode=downloadcourse&courseid={}".format(courseid),

@@ -10,15 +10,12 @@ from lr2irscraper.helper.exceptions import UnregisteredError
 
 
 def hash_to_id(hash_value: str) -> Tuple[str, int]:
-    """
-    BMS またはコースのハッシュ値から bmsid または courseid を得る。
+    """BMS またはコースのハッシュ値から bmsid または courseid を得る。
+
     たとえば hash_to_id("f8dcdfe070630bbb365323c662561a1a") とすれば ("bms", 15) のようなタプルが返る。
 
-    Args:
-        hash_value: BMS またはコースのハッシュ値
-
-    Returns: type, id　(type は "bms" または "course", id は bmsid または courseid)
-
+    :param hash_value: BMS またはコースのハッシュ値
+    :return: type, id　(type は "bms" または "course", id は bmsid または courseid)
     """
     validate_hash(hash_value)
     if len(hash_value) == 32:
@@ -28,13 +25,10 @@ def hash_to_id(hash_value: str) -> Tuple[str, int]:
 
 
 def hash_to_bmsid(hash_value: str) -> int:
-    """ BMS のハッシュ値から bmsid を得る。
+    """BMS のハッシュ値から bmsid を得る。
 
-    Args:
-        hash_value: ハッシュ値
-
-    Returns: bmsid
-
+    :param hash_value: ハッシュ値
+    :return: bmsid
     """
     validate_bms_hash(hash_value)
     try:
@@ -45,13 +39,10 @@ def hash_to_bmsid(hash_value: str) -> int:
 
 
 def hash_to_courseid(hash_value: str) -> int:
-    """ コースのハッシュ値から courseid を得る。
+    """コースのハッシュ値から courseid を得る。
 
-    Args:
-        hash_value: ハッシュ値
-
-    Returns: courseid
-
+    :param hash_value: ハッシュ値
+    :return: courseid
     """
     validate_course_hash(hash_value)
     try:
@@ -74,13 +65,10 @@ def hash_to_courseid(hash_value: str) -> int:
 
 
 def courseid_to_hash(courseid: int) -> str:
-    """ courseid からコースのハッシュ値を得る。
-
-    Args:
-        courseid: courseid
-
-    Returns: ハッシュ値
-
+    """courseid からコースのハッシュ値を得る。
+    
+    :param courseid: courseid
+    :return: ハッシュ値
     """
     validate_id(courseid)
     try:

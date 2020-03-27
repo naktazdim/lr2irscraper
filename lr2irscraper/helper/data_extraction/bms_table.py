@@ -12,15 +12,12 @@ from pandas.api.types import CategoricalDtype
 
 
 def extract_header_path(source: str) -> Union[str, None]:
-    """
-    難易度表ページの html ソースから、「ヘッダ部」のパスを読み取る。
+    """難易度表ページの html ソースから、「ヘッダ部」のパスを読み取る。
+
     見つからない場合 (「次期難易度表フォーマット」のページではない場合) は None を返す。
 
-    Args:
-        source: ソース (UTF-8 を想定)
-
-    Returns: 「ヘッダ部」のパス
-
+    :param source: ソース (UTF-8 を想定)
+    :return: 「ヘッダ部」のパス
     """
     class HeaderPathExtractor(HTMLParser):
         def __init__(self):
@@ -39,32 +36,24 @@ def extract_header_path(source: str) -> Union[str, None]:
 
 
 def extract_data_path(source: str) -> str:
-    """
-    難易度表ページ「ヘッダ部」の JSON データから、「データ部」のパスを読み取る。
+    """難易度表ページ「ヘッダ部」の JSON データから、「データ部」のパスを読み取る。
 
-    Args:
-        source: ソース (UTF-8 を想定)
-
-    Returns: 「データ部」のパス
-
+    :param source: ソース (UTF-8 を想定)
+    :return: 「データ部」のパス
     """
     return json.loads(source)["data_url"]
 
 
 def make_dataframe_from_header_and_data_json(header_json: str, data_json: str) -> pd.DataFrame:
-    """
-    次期難易度表フォーマットのデータを DataFrame として返す。
+    """次期難易度表フォーマットのデータを DataFrame として返す。
 
     "level" カラムは Categorical, 他のカラムはすべて文字列 (object 型) とする。
     表記レベルの先頭にはシンボルを付加する (たとえば "▼0")。
     欠損値は空文字列とする。
 
-    Args:
-        header_json: 「ヘッダ部」の JSON データ
-        data_json: 「データ部」の JSON データ
-
-    Returns:
-
+    :param header_json: 「ヘッダ部」の JSON データ
+    :param data_json: 「データ部」の JSON データ
+    :return:
     """
     header = json.loads(header_json, object_pairs_hook=OrderedDict)
     data = json.loads(data_json, object_pairs_hook=OrderedDict)
