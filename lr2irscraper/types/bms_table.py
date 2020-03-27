@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from dataclasses import dataclass
 from urllib.parse import urljoin
 from io import BytesIO
@@ -19,10 +19,10 @@ def _fetch_bmstable_json(url: str) -> Dict[str, Any]:
 @dataclass()
 class BmsTable(object):
     header: dict
-    data: Optional[dict]
+    data: dict
 
     @classmethod
-    def from_source(cls, header_source: str, data_source: Optional[str]) -> "BmsTable":
+    def from_source(cls, header_source: str, data_source: str) -> "BmsTable":
         return BmsTable(
             json.load(open(header_source)),
             json.load(open(data_source)) if data_source else None
