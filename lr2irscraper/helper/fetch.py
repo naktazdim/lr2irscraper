@@ -2,24 +2,32 @@
 LR2IR の search.cgi や getrankingxml.cgi などの生出力を取得する。
 ただし、元の Shift JIS ではなく unicode 文字列を返す。
 """
+from typing import Dict, Any
 import requests
+from urllib.parse import urlparse
+import json
 
 from lr2irscraper.types import BmsMd5, Lr2Id
 
 _session = requests.Session()
 
 
-def fetch(url: str, encoding: str = "auto") -> str:
-    """指定した URL からデータを得る。
+def fetch(url: str) -> bytes:
+    """指定したURL/パスにあるデータを返す。
 
-    :param url: URL
-    :param encoding: エンコーディング ("auto" の場合は自動判定)
+    http://, https://, file:// のいずれかで始まる URL、ないしはローカルファイルのパスを受け取ることができる。
+
+    :param url: URLまたはローカルファイルのパス
     :return: データ
     """
-    r = _session.get(url)
-    r.raise_for_status()
-    r.encoding = r.apparent_encoding if encoding == "auto" else encoding
-    return r.text
+    urlparse_result = urlparse(url)
+
+    if urlparse_result.scheme in ["http", "https"]:
+        r = _session.get(url)
+        r.raise_for_status()
+        return r.content
+    elif urlparse_result.scheme in ["file", ""]:
+        return open(urlparse_result.path, "rb").read()
 
 
 def fetch_ranking_xml(bmsmd5: BmsMd5) -> str:
@@ -29,8 +37,7 @@ def fetch_ranking_xml(bmsmd5: BmsMd5) -> str:
     :return: 生の xml
     """
     return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
-                 "/2/getrankingxml.cgi?id=1&songmd5={}".format(bmsmd5),
-                 encoding="cp932")
+                 "/2/getrankingxml.cgi?id=1&songmd5={}".format(bmsmd5)).decode("cp932")
 
 
 def fetch_ranking_html(bmsmd5: BmsMd5, page: int) -> str:
@@ -41,8 +48,7 @@ def fetch_ranking_html(bmsmd5: BmsMd5, page: int) -> str:
     :return: 生の html (1 ページ分)
     """
     return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
-                 "/search.cgi?mode=ranking&bmsmd5={}&page={}".format(bmsmd5, page),
-                 encoding="cp932")
+                 "/search.cgi?mode=ranking&bmsmd5={}&page={}".format(bmsmd5, page)).decode("cp932")
 
 
 def fetch_course_file(courseid: Lr2Id) -> str:
@@ -52,5 +58,14 @@ def fetch_course_file(courseid: Lr2Id) -> str:
     :return: 「コースファイル」 (xml)
     """
     return fetch("http://www.dream-pro.info/~lavalse/LR2IR"
-                 "/search.cgi?mode=downloadcourse&courseid={}".format(courseid.id),
-                 encoding="cp932")
+                 "/search.cgi?mode=downloadcourse&courseid={}".format(courseid.id)).decode("cp932")
+
+
+def fetch_bmstable_json(url: str) -> Dict[str, Any]:
+    """次期難易度表フォーマットのJSONファイル (headerまたはdata) を取得し、dictにして返す。
+
+    :param url: URL
+    :return: dict
+    """
+    # 仕様で UTF-8 と決まっている。"utf-8" だと BOM あり UTF-8 が読めない。 utf-8-sig は BOM ありもなしもどちらも読める
+    return json.loads(fetch(url).decode("utf-8-sig"))
