@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, asdict
+from typing import Optional, Dict, Any
 import re
 
 from lr2irscraper.fetch import fetch
@@ -61,3 +61,6 @@ class BmsInfo:
             .format(bmsmd5.hash, very_large_number)
         source = fetch(url).decode("cp932")
         return cls.from_source(source)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
