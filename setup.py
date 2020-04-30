@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='lr2irscraper',
-    version='2.1',
+    version='2.2',
     description='LR2 Internet Ranking Scraper Library',
     author='nakt',
     author_email='nakt_azdim@walkure.net',

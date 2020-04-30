@@ -1,6 +1,7 @@
 from dataclasses import dataclass, asdict
 from typing import Optional, Dict, Any
 import re
+import html
 
 from lr2irscraper.fetch import fetch
 from lr2irscraper.bmsmd5 import BmsMd5
@@ -30,7 +31,7 @@ class BmsInfo:
         title_match = re.search(r"<h1>(.*?)</h1>", source)
         if title_match is None:
             raise Exception("failed to detect title")
-        title = title_match.group(1)
+        title = html.unescape(title_match.group(1))
 
         bmsid_match = re.search(r"<a href=\"search\.cgi\?mode=editlogList&bmsid=(\d+)\">", source)
         courseid_match = re.search(r"<a href =\"search\.cgi\?mode=downloadcourse&courseid=(\d+)\">", source)
